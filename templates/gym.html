@@ -1,0 +1,1558 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
+<title>GYM — Digital Life</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cabinet+Grotesk:wght@400;500;700;800;900&family=Spline+Sans+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+/* ─── RESET + TOKENS ─────────────────────────────────────── */
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+:root{
+  --bg:#0a0a0f; --surface:#10101a; --surface2:#16162a;
+  --glass:rgba(255,255,255,.04); --glass-b:rgba(255,255,255,.07);
+  --border:rgba(255,255,255,.07); --border-h:rgba(255,255,255,.14);
+  --text:#f0f0f5; --muted:#5a5a72; --dim:#20202e;
+  --orange:#fb7124; --orange2:#ffaa60;
+  --green:#39e079; --purple:#9b8cff; --red:#ff6b84; --blue:#5eafff;
+}
+html{height:100%;background:var(--bg)}
+body{background:var(--bg);color:var(--text);font-family:'Spline Sans Mono',monospace;min-height:100%;overflow-x:hidden}
+body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
+  background:radial-gradient(ellipse 65% 40% at 20% 10%,rgba(251,113,36,.09) 0%,transparent 65%),
+             radial-gradient(ellipse 50% 55% at 80% 80%,rgba(57,224,121,.06) 0%,transparent 60%)}
+
+/* ─── HEADER ─────────────────────────────────────────────── */
+header{position:sticky;top:0;z-index:200;padding:0 20px;height:56px;
+  display:flex;align-items:center;justify-content:space-between;
+  background:rgba(10,10,15,.8);backdrop-filter:blur(24px);
+  border-bottom:1px solid var(--border)}
+.logo{font-family:'Cabinet Grotesk',sans-serif;font-weight:900;font-size:18px;
+  display:flex;align-items:center;gap:8px}
+.logo .flame{animation:flicker 1.8s ease-in-out infinite}
+@keyframes flicker{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.7;transform:scale(1.1)}}
+.logo-sub{font-size:11px;color:var(--muted);font-weight:400;letter-spacing:.5px}
+nav{display:flex;gap:2px}
+nav a{display:flex;align-items:center;gap:5px;padding:5px 10px;border-radius:8px;
+  font-size:11px;color:var(--muted);text-decoration:none;transition:all .2s}
+nav a:hover{color:var(--text);background:var(--glass)}
+nav a.active{color:var(--orange);background:rgba(251,113,36,.1)}
+
+/* ─── LAYOUT ─────────────────────────────────────────────── */
+.page{position:relative;z-index:1;max-width:960px;margin:0 auto;padding:28px 16px 80px}
+
+/* ─── WIZARD STEPS ───────────────────────────────────────── */
+.wizard{display:flex;flex-direction:column;gap:0}
+.step{display:none}
+.step.active{display:block}
+
+/* Step indicators */
+.steps-bar{display:flex;align-items:center;gap:0;margin-bottom:32px}
+.step-dot{
+  width:32px;height:32px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  font-size:12px;font-weight:700;font-family:'Cabinet Grotesk',sans-serif;
+  border:2px solid var(--border);color:var(--muted);
+  background:var(--surface);transition:all .3s;flex-shrink:0;
+}
+.step-dot.done{background:var(--orange);border-color:var(--orange);color:#fff}
+.step-dot.active{border-color:var(--orange);color:var(--orange);
+  box-shadow:0 0 0 4px rgba(251,113,36,.15)}
+.step-line{flex:1;height:2px;background:var(--border)}
+.step-line.done{background:var(--orange)}
+
+/* ─── STEP TITLE ─────────────────────────────────────────── */
+.step-title{
+  font-family:'Cabinet Grotesk',sans-serif;
+  font-size:28px;font-weight:900;letter-spacing:-1px;margin-bottom:6px}
+.step-sub{font-size:12px;color:var(--muted);margin-bottom:28px;line-height:1.6}
+
+/* ─── LEVEL CARDS ────────────────────────────────────────── */
+.level-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:28px}
+.level-card{
+  border-radius:18px;border:2px solid var(--border);
+  background:var(--glass);padding:24px 18px;
+  cursor:pointer;transition:all .25s cubic-bezier(.34,1.56,.64,1);
+  text-align:center;position:relative;overflow:hidden;
+}
+.level-card:hover{transform:translateY(-4px) scale(1.02);border-color:var(--lc-color)}
+.level-card.selected{border-color:var(--lc-color);
+  background:color-mix(in srgb,var(--lc-color) 12%,transparent);
+  box-shadow:0 0 32px color-mix(in srgb,var(--lc-color) 20%,transparent)}
+.level-card::before{content:var(--lc-check,'');position:absolute;top:10px;right:12px;
+  font-size:16px;opacity:0;transition:opacity .2s}
+.level-card.selected::before{opacity:1}
+.level-emoji{font-size:36px;margin-bottom:10px;display:block}
+.level-name{font-family:'Cabinet Grotesk',sans-serif;font-size:16px;font-weight:800;margin-bottom:4px}
+.level-desc{font-size:11px;color:var(--muted);line-height:1.5}
+.lc-ini{--lc-color:var(--green);--lc-check:'✓'}
+.lc-int{--lc-color:var(--orange);--lc-check:'✓'}
+.lc-adv{--lc-color:var(--red);--lc-check:'✓'}
+
+/* ─── GOAL CARDS ─────────────────────────────────────────── */
+.goal-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-bottom:28px}
+.goal-card{
+  border-radius:14px;border:2px solid var(--border);background:var(--glass);
+  padding:16px;cursor:pointer;transition:all .2s;
+  display:flex;align-items:center;gap:12px;
+}
+.goal-card:hover{border-color:var(--border-h)}
+.goal-card.selected{border-color:var(--orange);background:rgba(251,113,36,.08)}
+.goal-icon{font-size:24px;flex-shrink:0}
+.goal-text .gname{font-size:13px;font-weight:600;margin-bottom:2px}
+.goal-text .gdesc{font-size:11px;color:var(--muted)}
+
+/* ─── DAYS PICKER ────────────────────────────────────────── */
+.days-grid{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:28px}
+.day-btn{
+  width:56px;height:64px;border-radius:14px;border:2px solid var(--border);
+  background:var(--glass);cursor:pointer;transition:all .2s;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;
+}
+.day-btn:hover{border-color:var(--border-h)}
+.day-btn.selected{border-color:var(--orange);background:rgba(251,113,36,.1);
+  box-shadow:0 0 16px rgba(251,113,36,.15)}
+.day-btn .dnum{font-family:'Cabinet Grotesk',sans-serif;font-size:22px;font-weight:900;color:var(--orange)}
+.day-btn .dlbl{font-size:9px;color:var(--muted);letter-spacing:.5px;text-transform:uppercase}
+
+/* ─── FOCUS SELECTOR ─────────────────────────────────────── */
+.focus-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:28px}
+.focus-chip{
+  border-radius:10px;border:1.5px solid var(--border);background:var(--glass);
+  padding:10px 14px;cursor:pointer;transition:all .15s;
+  display:flex;align-items:center;gap:8px;font-size:12px;
+}
+.focus-chip:hover{border-color:var(--border-h)}
+.focus-chip.sel{border-color:var(--orange);background:rgba(251,113,36,.08);color:var(--orange)}
+
+/* ─── NAVIGATE BUTTONS ───────────────────────────────────── */
+.nav-btns{display:flex;gap:10px;justify-content:flex-end;margin-top:8px}
+.btn{border:none;cursor:pointer;font-family:'Spline Sans Mono',monospace;
+  border-radius:10px;font-size:12px;padding:10px 20px;transition:all .2s}
+.btn-orange{background:var(--orange);color:#fff;font-weight:600}
+.btn-orange:hover{background:var(--orange2);color:#111}
+.btn-ghost{background:var(--glass-b);color:var(--muted);border:1px solid var(--border)}
+.btn-ghost:hover{color:var(--text);border-color:var(--border-h)}
+.btn-lg{padding:14px 28px;font-size:13px;border-radius:12px}
+.btn-icon{padding:8px 14px}
+
+/* ─── TREINO GERADO ──────────────────────────────────────── */
+.plano-header{
+  background:linear-gradient(135deg,#1a0f05 0%,#1a1205 60%,#0f150a 100%);
+  border:1px solid rgba(251,113,36,.25);border-radius:20px;
+  padding:24px;margin-bottom:24px;position:relative;overflow:hidden;
+}
+.plano-header::after{content:'';position:absolute;top:-30px;right:-30px;
+  width:150px;height:150px;border-radius:50%;
+  background:radial-gradient(circle,rgba(251,113,36,.2) 0%,transparent 70%)}
+.plano-badge{display:inline-flex;align-items:center;gap:6px;
+  background:rgba(251,113,36,.15);border:1px solid rgba(251,113,36,.3);
+  border-radius:100px;padding:4px 12px;font-size:10px;color:var(--orange);
+  letter-spacing:1px;text-transform:uppercase;margin-bottom:10px}
+.plano-title{font-family:'Cabinet Grotesk',sans-serif;font-size:28px;font-weight:900;
+  letter-spacing:-1px;margin-bottom:4px}
+.plano-meta{font-size:11px;color:var(--muted)}
+.plano-stats{display:flex;gap:20px;margin-top:16px;flex-wrap:wrap}
+.pstat{text-align:center}
+.pstat-val{font-family:'Cabinet Grotesk',sans-serif;font-size:20px;font-weight:800;color:var(--orange)}
+.pstat-lbl{font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px}
+
+/* ─── SEMANA TABS ────────────────────────────────────────── */
+.week-tabs{display:flex;gap:6px;margin-bottom:20px;overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:4px}
+.wtab{
+  flex-shrink:0;padding:8px 16px;border-radius:10px;font-size:12px;
+  background:var(--glass);border:1px solid var(--border);
+  color:var(--muted);cursor:pointer;transition:all .2s;
+  white-space:nowrap;
+}
+.wtab:hover{border-color:var(--border-h);color:var(--text)}
+.wtab.active{background:rgba(251,113,36,.12);border-color:rgba(251,113,36,.4);color:var(--orange)}
+
+/* ─── DIA CARD ───────────────────────────────────────────── */
+.dia-card{
+  background:var(--glass);border:1px solid var(--border);border-radius:16px;
+  padding:18px;margin-bottom:12px;
+}
+.dia-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+.dia-name{font-family:'Cabinet Grotesk',sans-serif;font-size:18px;font-weight:800}
+.dia-tag{padding:3px 10px;border-radius:20px;font-size:10px;font-weight:600;
+  background:rgba(251,113,36,.12);border:1px solid rgba(251,113,36,.2);color:var(--orange)}
+.dia-tag.rest{background:rgba(90,90,114,.1);border-color:rgba(90,90,114,.2);color:var(--muted)}
+
+/* ─── EXERCISE CARD ──────────────────────────────────────── */
+.ex-list{display:flex;flex-direction:column;gap:10px}
+.ex-card{
+  border-radius:14px;border:1px solid var(--border);
+  overflow:hidden;transition:border-color .2s;cursor:pointer;
+}
+.ex-card:hover{border-color:var(--border-h)}
+.ex-card.open{border-color:rgba(251,113,36,.3)}
+.ex-head{
+  display:flex;align-items:center;gap:12px;
+  padding:14px 16px;background:var(--surface);
+  transition:background .15s;
+}
+.ex-card.open .ex-head{background:rgba(251,113,36,.05)}
+.ex-num{
+  width:28px;height:28px;border-radius:8px;
+  background:rgba(251,113,36,.12);border:1px solid rgba(251,113,36,.2);
+  display:flex;align-items:center;justify-content:center;
+  font-size:11px;font-weight:700;color:var(--orange);flex-shrink:0;
+}
+.ex-info{flex:1}
+.ex-name{font-size:13px;font-weight:600;margin-bottom:2px}
+.ex-meta{font-size:11px;color:var(--muted)}
+.ex-muscle{
+  padding:3px 8px;border-radius:6px;font-size:10px;
+  background:var(--surface2);color:var(--muted);
+  white-space:nowrap;
+}
+.ex-toggle{font-size:14px;color:var(--muted);transition:transform .2s;flex-shrink:0}
+.ex-card.open .ex-toggle{transform:rotate(180deg);color:var(--orange)}
+
+/* ─── EXERCISE DETAIL ─────────────────────────────────────── */
+.ex-detail{display:none;border-top:1px solid var(--border)}
+.ex-card.open .ex-detail{display:block}
+.ex-detail-inner{
+  display:grid;grid-template-columns:1fr 1fr;gap:0;
+}
+.ex-video-wrap{
+  background:#000;aspect-ratio:16/9;
+  display:flex;align-items:center;justify-content:center;
+  position:relative;overflow:hidden;
+}
+.ex-video-thumb{
+  width:100%;height:100%;object-fit:cover;opacity:.6;
+  background:linear-gradient(135deg,#1a1005,#0a0a15);
+  display:flex;align-items:center;justify-content:center;flex-direction:column;gap:8px;
+}
+.ex-play-btn{
+  width:48px;height:48px;border-radius:50%;
+  background:rgba(251,113,36,.9);border:none;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  font-size:18px;transition:transform .2s;z-index:2;position:relative;
+  box-shadow:0 0 20px rgba(251,113,36,.4);
+}
+.ex-play-btn:hover{transform:scale(1.1)}
+.ex-play-label{font-size:10px;color:rgba(255,255,255,.5);position:relative;z-index:2}
+.yt-frame{width:100%;height:100%;border:none}
+.ex-desc{padding:16px;background:var(--surface)}
+.ex-desc h4{font-family:'Cabinet Grotesk',sans-serif;font-size:14px;font-weight:800;
+  margin-bottom:8px;color:var(--orange)}
+.ex-desc p{font-size:12px;color:var(--muted);line-height:1.7;margin-bottom:12px}
+.ex-steps{list-style:none;display:flex;flex-direction:column;gap:6px}
+.ex-steps li{font-size:11px;color:var(--text);line-height:1.6;
+  display:flex;gap:8px;align-items:flex-start}
+.ex-steps li::before{content:attr(data-n);
+  width:18px;height:18px;border-radius:5px;background:rgba(251,113,36,.15);
+  color:var(--orange);font-size:10px;font-weight:700;
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px}
+.ex-chips{display:flex;gap:6px;flex-wrap:wrap;margin-top:12px}
+.ex-chip{padding:3px 8px;border-radius:6px;font-size:10px;
+  background:var(--surface2);color:var(--muted);border:1px solid var(--border)}
+.ex-chip.tip{background:rgba(57,224,121,.08);border-color:rgba(57,224,121,.2);color:var(--green)}
+
+/* ─── AQUECIMENTO / VOLTA CALMA ──────────────────────────── */
+.warmup-box{
+  background:rgba(57,224,121,.05);border:1px solid rgba(57,224,121,.15);
+  border-radius:12px;padding:14px 16px;margin-bottom:12px;
+  font-size:12px;color:var(--muted);line-height:1.8;
+}
+.warmup-box strong{color:var(--green)}
+
+/* ─── SUMMARY TABLE ──────────────────────────────────────── */
+.summary-table{width:100%;border-collapse:collapse;font-size:12px}
+.summary-table th{padding:8px 12px;text-align:left;font-size:10px;color:var(--muted);
+  letter-spacing:1px;text-transform:uppercase;background:var(--surface2);
+  border-bottom:1px solid var(--border)}
+.summary-table td{padding:10px 12px;border-bottom:1px solid rgba(255,255,255,.03)}
+.summary-table tr:last-child td{border-bottom:none}
+.mus-dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px;vertical-align:middle}
+
+/* ─── PRINT / COPY ───────────────────────────────────────── */
+.action-bar{display:flex;gap:8px;margin-top:20px;flex-wrap:wrap}
+
+/* ─── MODAL ──────────────────────────────────────────────── */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.75);backdrop-filter:blur(8px);
+  z-index:500;display:none;align-items:center;justify-content:center}
+.modal-overlay.show{display:flex}
+.modal-box{background:var(--surface);border:1px solid var(--border);border-radius:20px;
+  padding:28px;width:90%;max-width:480px;max-height:80vh;overflow-y:auto}
+
+/* ─── TOAST ──────────────────────────────────────────────── */
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(60px);
+  background:rgba(18,18,28,.95);border:1px solid var(--border);border-radius:12px;
+  padding:10px 18px;font-size:12px;backdrop-filter:blur(20px);z-index:600;
+  transition:transform .3s cubic-bezier(.34,1.56,.64,1);pointer-events:none;text-align:center}
+.toast.show{transform:translateX(-50%) translateY(0)}
+.toast.ok{border-color:rgba(57,224,121,.3);color:var(--green)}
+
+/* ─── MISC ───────────────────────────────────────────────── */
+.section-card{background:var(--glass);border:1px solid var(--border);
+  border-radius:20px;padding:22px;margin-bottom:20px}
+.sec-title{font-family:'Cabinet Grotesk',sans-serif;font-size:18px;font-weight:800;
+  letter-spacing:-.3px;margin-bottom:4px}
+.sec-sub{font-size:11px;color:var(--muted);margin-bottom:16px}
+hr.divider{border:none;border-top:1px solid var(--border);margin:16px 0}
+
+/* ── MOBILE 640px ─────────────── */
+@media(max-width:640px){
+  header{padding:0 12px;height:50px}
+  .logo{font-size:15px}
+  .logo-sub{display:none}
+  nav a{padding:4px 8px;font-size:10px}
+  nav a span:last-child{display:none}
+
+  .page{padding:16px 10px 72px}
+
+  /* Wizard */
+  .steps-bar{gap:0;margin-bottom:20px}
+  .step-dot{width:26px;height:26px;font-size:11px}
+  .step-title{font-size:22px;letter-spacing:-.5px}
+  .step-sub{font-size:11px;margin-bottom:20px}
+
+  /* Level cards: empilhados */
+  .level-grid{grid-template-columns:1fr;gap:10px}
+  .level-card{padding:16px 14px;display:flex;align-items:center;gap:14px;text-align:left}
+  .level-emoji{font-size:28px;margin-bottom:0;flex-shrink:0}
+  .level-name{font-size:14px}
+  .level-desc{font-size:11px}
+
+  /* Goals: 1 coluna */
+  .goal-grid{grid-template-columns:1fr;gap:8px}
+  .goal-card{padding:12px}
+  .goal-icon{font-size:20px}
+  .gname{font-size:12px}
+  .gdesc{font-size:10px}
+
+  /* Days picker */
+  .days-grid{gap:8px}
+  .day-btn{width:52px;height:58px}
+  .dnum{font-size:20px}
+
+  /* Focus chips */
+  .focus-grid{grid-template-columns:1fr 1fr;gap:8px}
+  .focus-chip{font-size:11px;padding:8px 10px}
+
+  /* Botões wizard */
+  .nav-btns{justify-content:stretch;flex-direction:column-reverse;gap:8px}
+  .btn-lg{width:100%;text-align:center;padding:13px}
+
+  /* Plano header */
+  .plano-header{padding:16px}
+  .plano-title{font-size:22px}
+  .plano-stats{gap:14px}
+  .pstat-val{font-size:16px}
+
+  /* Week tabs */
+  .week-tabs{gap:4px;padding-bottom:2px}
+  .wtab{padding:6px 10px;font-size:11px}
+
+  /* Exercício – detalhe em coluna única */
+  .ex-detail-inner{grid-template-columns:1fr}
+  .ex-head{padding:10px 12px;gap:8px}
+  .ex-name{font-size:12px}
+  .ex-meta{font-size:10px}
+  .ex-muscle{font-size:9px;padding:2px 6px}
+  .ex-num{width:24px;height:24px;font-size:10px;border-radius:6px}
+
+  /* Vídeo full width */
+  .ex-video-wrap{aspect-ratio:16/9}
+  .ex-desc{padding:12px}
+  .ex-desc p{font-size:11px}
+  .ex-steps li{font-size:10px}
+
+  /* Dia card */
+  .dia-card{padding:14px 12px}
+  .dia-name{font-size:16px}
+  .warmup-box{font-size:11px;padding:10px 12px}
+
+  /* Plano badge */
+  .plano-badge{font-size:9px}
+
+  /* Action bar */
+  .action-bar{flex-direction:column}
+  .action-bar .btn{width:100%;text-align:center}
+}
+/* ── MOBILE 380px ─────────────── */
+@media(max-width:380px){
+  .focus-grid{grid-template-columns:1fr}
+  .days-grid{gap:6px}
+  .day-btn{width:46px;height:52px}
+  .dnum{font-size:18px}
+  .step-title{font-size:18px}
+  .plano-title{font-size:18px}
+}
+</style>
+</head>
+<body>
+
+<!-- ── HEADER ──────────────────────────────────────────── -->
+<header>
+  <div class="logo">
+    <span class="flame">🔥</span>
+    Digital<span style="color:var(--orange)">Life</span>
+    <span class="logo-sub">/ GYM</span>
+  </div>
+  <nav>
+    <a href="/portal">🏠 <span>Portal</span></a>
+    <a href="/financeiro">💰 <span>Financeiro</span></a>
+    <a href="/vida">🎮 <span>Vida</span></a>
+    <a href="/gym" class="active">🏋️ <span>GYM</span></a>
+  </nav>
+</header>
+
+<div class="page">
+
+  <!-- ══════════════════════════════════════════════════════
+       WIZARD
+  ══════════════════════════════════════════════════════ -->
+  <div id="wizard-wrap">
+
+    <!-- Steps indicator -->
+    <div class="steps-bar">
+      <div class="step-dot active" id="sd-1">1</div>
+      <div class="step-line" id="sl-1"></div>
+      <div class="step-dot" id="sd-2">2</div>
+      <div class="step-line" id="sl-2"></div>
+      <div class="step-dot" id="sd-3">3</div>
+      <div class="step-line" id="sl-3"></div>
+      <div class="step-dot" id="sd-4">4</div>
+    </div>
+
+    <!-- ── STEP 1: Nível ────────────────────────────────── -->
+    <div class="step active" id="step-1">
+      <div class="step-title">Qual é o seu nível?</div>
+      <div class="step-sub">Seja honesto — isso garante um treino seguro e eficaz para você.</div>
+
+      <div class="level-grid">
+        <div class="level-card lc-ini" data-level="iniciante" onclick="selLevel(this)">
+          <span class="level-emoji">🌱</span>
+          <div class="level-name" style="color:var(--green)">Iniciante</div>
+          <div class="level-desc">Menos de 6 meses de treino ou voltando após longa pausa. Foco em técnica e base.</div>
+        </div>
+        <div class="level-card lc-int" data-level="intermediario" onclick="selLevel(this)">
+          <span class="level-emoji">⚡</span>
+          <div class="level-name" style="color:var(--orange)">Intermediário</div>
+          <div class="level-desc">6 meses a 2 anos de treino consistente. Domina os movimentos básicos.</div>
+        </div>
+        <div class="level-card lc-adv" data-level="avancado" onclick="selLevel(this)">
+          <span class="level-emoji">💪</span>
+          <div class="level-name" style="color:var(--red)">Avançado</div>
+          <div class="level-desc">Mais de 2 anos, busca periodização e sobrecarga progressiva.</div>
+        </div>
+      </div>
+
+      <div class="nav-btns">
+        <button class="btn btn-orange btn-lg" onclick="goStep(2)">Próximo →</button>
+      </div>
+    </div>
+
+    <!-- ── STEP 2: Objetivo ─────────────────────────────── -->
+    <div class="step" id="step-2">
+      <div class="step-title">Qual o seu objetivo?</div>
+      <div class="step-sub">O treino será montado com base no seu objetivo principal.</div>
+
+      <div class="goal-grid">
+        <div class="goal-card" data-goal="hipertrofia" onclick="selGoal(this)">
+          <span class="goal-icon">🏋️</span>
+          <div class="goal-text">
+            <div class="gname">Hipertrofia</div>
+            <div class="gdesc">Ganho de massa muscular e definição</div>
+          </div>
+        </div>
+        <div class="goal-card" data-goal="forca" onclick="selGoal(this)">
+          <span class="goal-icon">⚙️</span>
+          <div class="goal-text">
+            <div class="gname">Força</div>
+            <div class="gdesc">Aumentar cargas nos levantamentos básicos</div>
+          </div>
+        </div>
+        <div class="goal-card" data-goal="emagrecimento" onclick="selGoal(this)">
+          <span class="goal-icon">🔥</span>
+          <div class="goal-text">
+            <div class="gname">Emagrecimento</div>
+            <div class="gdesc">Queimar gordura mantendo massa muscular</div>
+          </div>
+        </div>
+        <div class="goal-card" data-goal="condicionamento" onclick="selGoal(this)">
+          <span class="goal-icon">🏃</span>
+          <div class="goal-text">
+            <div class="gname">Condicionamento</div>
+            <div class="gdesc">Resistência, disposição e saúde geral</div>
+          </div>
+        </div>
+        <div class="goal-card" data-goal="reabilitacao" onclick="selGoal(this)">
+          <span class="goal-icon">💚</span>
+          <div class="goal-text">
+            <div class="gname">Reabilitação</div>
+            <div class="gdesc">Recuperar mobilidade e fortalecer com segurança</div>
+          </div>
+        </div>
+        <div class="goal-card" data-goal="atletico" onclick="selGoal(this)">
+          <span class="goal-icon">🏆</span>
+          <div class="goal-text">
+            <div class="gname">Desempenho atlético</div>
+            <div class="gdesc">Potência, velocidade e explosão</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="nav-btns">
+        <button class="btn btn-ghost" onclick="goStep(1)">← Voltar</button>
+        <button class="btn btn-orange btn-lg" onclick="goStep(3)">Próximo →</button>
+      </div>
+    </div>
+
+    <!-- ── STEP 3: Dias por semana ──────────────────────── -->
+    <div class="step" id="step-3">
+      <div class="step-title">Quantos dias por semana?</div>
+      <div class="step-sub">Escolha um número que consiga manter com consistência. Consistência bate intensidade.</div>
+
+      <div class="days-grid">
+        <div class="day-btn" data-days="2" onclick="selDays(this)">
+          <span class="dnum">2</span><span class="dlbl">dias</span>
+        </div>
+        <div class="day-btn" data-days="3" onclick="selDays(this)">
+          <span class="dnum">3</span><span class="dlbl">dias</span>
+        </div>
+        <div class="day-btn" data-days="4" onclick="selDays(this)">
+          <span class="dnum">4</span><span class="dlbl">dias</span>
+        </div>
+        <div class="day-btn" data-days="5" onclick="selDays(this)">
+          <span class="dnum">5</span><span class="dlbl">dias</span>
+        </div>
+        <div class="day-btn" data-days="6" onclick="selDays(this)">
+          <span class="dnum">6</span><span class="dlbl">dias</span>
+        </div>
+      </div>
+
+      <div id="days-info" style="font-size:12px;color:var(--muted);padding:12px 16px;
+        background:var(--glass);border:1px solid var(--border);border-radius:12px;margin-bottom:24px;
+        line-height:1.7;display:none"></div>
+
+      <div class="nav-btns">
+        <button class="btn btn-ghost" onclick="goStep(2)">← Voltar</button>
+        <button class="btn btn-orange btn-lg" onclick="goStep(4)">Próximo →</button>
+      </div>
+    </div>
+
+    <!-- ── STEP 4: Foco ─────────────────────────────────── -->
+    <div class="step" id="step-4">
+      <div class="step-title">Algum foco especial?</div>
+      <div class="step-sub">Selecione grupos musculares ou áreas que quer priorizar (opcional).</div>
+
+      <div class="focus-grid" id="focus-grid">
+        <div class="focus-chip" data-focus="peito" onclick="toggleFocus(this)">🫁 Peito</div>
+        <div class="focus-chip" data-focus="costas" onclick="toggleFocus(this)">🔙 Costas</div>
+        <div class="focus-chip" data-focus="ombros" onclick="toggleFocus(this)">🏋️ Ombros</div>
+        <div class="focus-chip" data-focus="biceps" onclick="toggleFocus(this)">💪 Bíceps</div>
+        <div class="focus-chip" data-focus="triceps" onclick="toggleFocus(this)">🦾 Tríceps</div>
+        <div class="focus-chip" data-focus="quadriceps" onclick="toggleFocus(this)">🦵 Quadríceps</div>
+        <div class="focus-chip" data-focus="posterior" onclick="toggleFocus(this)">🦵 Posterior/Glúteo</div>
+        <div class="focus-chip" data-focus="abdomen" onclick="toggleFocus(this)">🔲 Abdômen</div>
+        <div class="focus-chip" data-focus="panturrilha" onclick="toggleFocus(this)">🦶 Panturrilha</div>
+        <div class="focus-chip" data-focus="antebraco" onclick="toggleFocus(this)">🤝 Antebraço</div>
+      </div>
+
+      <div class="nav-btns">
+        <button class="btn btn-ghost" onclick="goStep(3)">← Voltar</button>
+        <button class="btn btn-orange btn-lg" onclick="gerarTreino()">🔥 Gerar Treino</button>
+      </div>
+    </div>
+
+  </div><!-- end wizard-wrap -->
+
+  <!-- ══════════════════════════════════════════════════════
+       PLANO GERADO (oculto até gerar)
+  ══════════════════════════════════════════════════════ -->
+  <div id="plano-wrap" style="display:none">
+
+    <div class="plano-header">
+      <div class="plano-badge">🔥 Plano Gerado</div>
+      <div class="plano-title" id="plano-title">—</div>
+      <div class="plano-meta" id="plano-meta">—</div>
+      <div class="plano-stats" id="plano-stats"></div>
+    </div>
+
+    <!-- Week tabs -->
+    <div class="week-tabs" id="week-tabs"></div>
+
+    <!-- Treino do dia -->
+    <div id="treino-dia"></div>
+
+    <div class="action-bar">
+      <button class="btn btn-orange" onclick="voltarWizard()">← Refazer</button>
+      <button class="btn btn-ghost" onclick="window.print()">🖨️ Imprimir</button>
+      <button class="btn btn-ghost" onclick="copiarPlano()">📋 Copiar</button>
+    </div>
+  </div>
+
+</div><!-- end page -->
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ═══════════════════════════════════════════════════════════
+//  BANCO DE EXERCÍCIOS
+// ═══════════════════════════════════════════════════════════
+const EXERCICIOS = {
+
+  // ── PEITO ────────────────────────────────────────────────
+  supino_reto:{
+    nome:'Supino Reto com Barra', musculo:'Peito', grupo:'peito',
+    dificuldade:'iniciante', equipamento:'barra + banco',
+    yt:'https://www.youtube.com/embed/rT7DgCr-3pg',
+    descricao:'O exercício base para desenvolvimento do peitoral. Trabalha o peitoral maior (porção esternocostal), deltoide anterior e tríceps como sinergistas.',
+    execucao:[
+      'Deite no banco com os pés apoiados no chão, costas levemente arqueadas (natural)',
+      'Segure a barra com pegada pronada, ligeiramente mais larga que a largura dos ombros',
+      'Retire a barra do suporte com braços estendidos sobre o peito',
+      'Desça a barra de forma controlada até tocar o peito (altura do esterno médio)',
+      'Empurre de volta explosivamente até a extensão total dos cotovelos',
+      'Mantenha as escápulas retraídas e deprimidas durante todo o movimento',
+    ],
+    series:'3–4',reps:'8–12',descanso:'60–90s',
+    dicas:['Pé no chão o tempo todo','Não solte o ar na subida','Barra desce em linha diagonal'],
+    nivel_series:{iniciante:'3x10',intermediario:'4x8-10',avancado:'5x5-8'},
+  },
+  supino_inclinado:{
+    nome:'Supino Inclinado com Halter', musculo:'Peito Superior', grupo:'peito',
+    dificuldade:'iniciante', equipamento:'halteres + banco inclinado',
+    yt:'https://www.youtube.com/embed/DbFgADa2PL8',
+    descricao:'Enfatiza a porção clavicular (superior) do peitoral. O ângulo de 30–45° é ideal para ativar a cabeça clavicular sem exigir muito do deltoide.',
+    execucao:[
+      'Ajuste o banco entre 30° e 45° de inclinação',
+      'Segure os halteres acima do peito com palmas voltadas para frente',
+      'Desça os halteres abrindo os cotovelos até sentir alongamento no peito',
+      'Pressione de volta convergindo os halteres no topo sem bater',
+      'Mantenha o movimento fluido e controlado em ambas as fases',
+    ],
+    series:'3',reps:'10–12',descanso:'60s',
+    dicas:['Incline entre 30-45°','Cotovelos não passam de 45° de abertura','Toque suave no topo'],
+    nivel_series:{iniciante:'3x12',intermediario:'4x10-12',avancado:'4x8-10'},
+  },
+  crucifixo:{
+    nome:'Crucifixo com Halter', musculo:'Peito / Alongamento', grupo:'peito',
+    dificuldade:'iniciante', equipamento:'halteres + banco plano',
+    yt:'https://www.youtube.com/embed/eozdVDA78K0',
+    descricao:'Exercício de isolamento para o peitoral maior. Foca no alongamento das fibras musculares pectorais com menor ativação do tríceps.',
+    execucao:[
+      'Deite no banco plano segurando os halteres acima do peito, palmas se encarando',
+      'Mantenha leve flexão nos cotovelos (não tranque os braços)',
+      'Abra os braços em arco amplo descendo até sentir forte alongamento no peito',
+      'Traga de volta como "abraçando uma árvore", sem usar o tríceps para empurrar',
+      'Sinta a contração no peitoral no topo do movimento',
+    ],
+    series:'3',reps:'12–15',descanso:'45s',
+    dicas:['Movimento em arco, não press','Cotovelos levemente flexionados','Carga leve e amplitude total'],
+    nivel_series:{iniciante:'3x15',intermediario:'3x12-15',avancado:'4x12'},
+  },
+  mergulho_peito:{
+    nome:'Mergulho (Dips) — ênfase Peito', musculo:'Peito / Tríceps', grupo:'peito',
+    dificuldade:'intermediario', equipamento:'barras paralelas',
+    yt:'https://www.youtube.com/embed/2z8JmcrW-As',
+    descricao:'Exercício de peso corporal altamente eficaz para peito e tríceps. A inclinação do tronco determina o enfoque: tronco inclinado = mais peito.',
+    execucao:[
+      'Suba nas barras paralelas com braços estendidos',
+      'Incline o tronco levemente para frente (±30°) para enfatizar o peito',
+      'Desça dobrando os cotovelos até os braços formarem 90°',
+      'Empurre de volta à posição inicial com força explosiva',
+      'Se usar peso, fixe na cintura com corrente ou entre as pernas',
+    ],
+    series:'3',reps:'8–12',descanso:'90s',
+    dicas:['Tronco inclinado = mais peito','Tronco reto = mais tríceps','Adicione peso ao evoluir'],
+    nivel_series:{iniciante:'3x8 (peso corp)',intermediario:'4x8-10',avancado:'4x8 +carga'},
+  },
+
+  // ── COSTAS ───────────────────────────────────────────────
+  puxada_frontal:{
+    nome:'Puxada Frontal (Pulldown)', musculo:'Costas / Grande Dorsal', grupo:'costas',
+    dificuldade:'iniciante', equipamento:'polia alta + barra',
+    yt:'https://www.youtube.com/embed/CAwf7n6Luuc',
+    descricao:'Exercício fundamental para desenvolvimento do latíssimo do dorso (grande dorsal). Cria o formato em V das costas.',
+    execucao:[
+      'Ajuste a almofada sobre as coxas e sente-se com os pés no chão',
+      'Segure a barra com pegada pronada levemente mais larga que os ombros',
+      'Incline o tronco levemente para trás (±15°) e puxe a barra até a altura do queixo/peito',
+      'Puxe com os cotovelos em direção às costelas, não para baixo',
+      'Suba de forma controlada, sentindo o alongamento total',
+    ],
+    series:'3–4',reps:'10–12',descanso:'60s',
+    dicas:['Puxe com os cotovelos, não as mãos','Peito alto e aberto','Não empurre a cabeça para frente'],
+    nivel_series:{iniciante:'3x12',intermediario:'4x10-12',avancado:'4x8-10 +carga'},
+  },
+  remada_curvada:{
+    nome:'Remada Curvada com Barra', musculo:'Costas Grossa / Trapézio', grupo:'costas',
+    dificuldade:'intermediario', equipamento:'barra',
+    yt:'https://www.youtube.com/embed/9efgcAjQe7E',
+    descricao:'Um dos melhores exercícios para desenvolver espessura nas costas. Ativa romboides, trapézio médio e inferior, além do grande dorsal.',
+    execucao:[
+      'Pegue a barra com pegada pronada, ligeiramente mais larga que os ombros',
+      'Incline o tronco a 45°–60° com a barra pendurada na vertical',
+      'Puxe a barra em direção ao umbigo/barriga baixa retraindo as escápulas',
+      'Segure a contração 1 segundo e desça de forma controlada',
+      'Mantenha a coluna neutra durante todo o exercício',
+    ],
+    series:'4',reps:'8–10',descanso:'90s',
+    dicas:['Coluna neutra, não arredonde','Cotovelos perto do corpo','Não use impulso do tronco'],
+    nivel_series:{iniciante:'3x12',intermediario:'4x8-10',avancado:'4x6-8 pesado'},
+  },
+  levantamento_terra:{
+    nome:'Levantamento Terra', musculo:'Posterior / Costas / Glúteo', grupo:'costas',
+    dificuldade:'intermediario', equipamento:'barra',
+    yt:'https://www.youtube.com/embed/op9kVnSso6Q',
+    descricao:'Rei dos exercícios. Trabalha quase todos os músculos do corpo com ênfase em cadeia posterior. Requer técnica apurada.',
+    execucao:[
+      'Posicione a barra sobre os dedos dos pés, afastados na largura do quadril',
+      'Agache com joelhos flexionados e pegue a barra com mãos além da largura dos ombros',
+      'Peito alto, coluna neutra, olhar à frente e para baixo',
+      'Empurre o chão com os pés para iniciar o movimento (não puxe com as costas)',
+      'Estenda joelhos e quadril simultaneamente, barra rente ao corpo',
+      'No topo, quadril completo à frente sem hiperextender a lombar',
+    ],
+    series:'3–5',reps:'3–6',descanso:'3–5min',
+    dicas:['Barra rente às canelas','Não arredonde a lombar','Aprenda com peso leve primeiro'],
+    nivel_series:{iniciante:'3x8 leve',intermediario:'4x5-6',avancado:'5x3-5 pesado'},
+  },
+  pullup:{
+    nome:'Barra Fixa (Pull-up)', musculo:'Costas / Bíceps', grupo:'costas',
+    dificuldade:'intermediario', equipamento:'barra fixa',
+    yt:'https://www.youtube.com/embed/eGo4IYlbE5g',
+    descricao:'Um dos melhores exercícios para costas com peso corporal. Altamente funcional e transferível para esportes.',
+    execucao:[
+      'Segure a barra com pegada pronada, largura dos ombros',
+      'Pendure com braços completamente estendidos (posição morta)',
+      'Puxe o corpo para cima até o queixo ultrapassar a barra',
+      'Controle a descida por 2–3 segundos até extensão total',
+      'Iniciantes: use elástico de assistência ou lat pulldown',
+    ],
+    series:'3',reps:'máximo ou 6-10',descanso:'2min',
+    dicas:['Amplitude completa','Não use impulso do quadril','Adicione peso ao dominar'],
+    nivel_series:{iniciante:'3xmáx (assist)',intermediario:'4x6-10',avancado:'4x8-12 +carga'},
+  },
+
+  // ── OMBROS ────────────────────────────────────────────────
+  desenvolvimento_halter:{
+    nome:'Desenvolvimento com Halter', musculo:'Ombros (Deltoides)', grupo:'ombros',
+    dificuldade:'iniciante', equipamento:'halteres',
+    yt:'https://www.youtube.com/embed/B-aVuyhvLHU',
+    descricao:'Exercício composto para desenvolvimento dos três feixes do deltoide. Empurrar objetos acima da cabeça é um dos movimentos mais funcionais.',
+    execucao:[
+      'Sente em banco com encosto ou fique em pé com core contraído',
+      'Segure os halteres na altura dos ombros com cotovelos a 90°',
+      'Empurre diretamente para cima até quase a extensão total (não trave)',
+      'Desça de forma controlada até a posição inicial',
+      'Mantenha os ombros deprimidos (longe das orelhas) durante o movimento',
+    ],
+    series:'3–4',reps:'10–12',descanso:'60s',
+    dicas:['Não trave os cotovelos no topo','Ombros longe das orelhas','Banco com encosto para iniciantes'],
+    nivel_series:{iniciante:'3x12',intermediario:'4x10-12',avancado:'4x8-10'},
+  },
+  elevacao_lateral:{
+    nome:'Elevação Lateral com Halter', musculo:'Deltoide Médio', grupo:'ombros',
+    dificuldade:'iniciante', equipamento:'halteres',
+    yt:'https://www.youtube.com/embed/3VcKaXpzqRo',
+    descricao:'Isolamento para o deltoide médio, responsável pela largura dos ombros. Carga leve e controle são fundamentais.',
+    execucao:[
+      'Fique em pé com os halteres nas laterais do corpo',
+      'Levante os braços lateralmente até a altura dos ombros com leve flexão nos cotovelos',
+      'Imagine despejar água de uma jarra: polegar levemente abaixo',
+      'Desça de forma lenta e controlada (fase excêntrica é fundamental)',
+      'Evite usar o trapézio — não eleve os ombros',
+    ],
+    series:'3–4',reps:'12–15',descanso:'45s',
+    dicas:['Carga leve: o músculo é pequeno','Descida lenta em 3s','Não use impulso — sem "roubar"'],
+    nivel_series:{iniciante:'3x15',intermediario:'4x12-15',avancado:'4x12 + drop-set'},
+  },
+  face_pull:{
+    nome:'Face Pull na Polia', musculo:'Deltoide Posterior / Manguito', grupo:'ombros',
+    dificuldade:'iniciante', equipamento:'polia',
+    yt:'https://www.youtube.com/embed/HSoHeSjvIdM',
+    descricao:'Essencial para saúde dos ombros e postura. Fortalece o deltoide posterior e os rotadores externos, muito negligenciados.',
+    execucao:[
+      'Posicione a polia na altura do rosto com corda dupla',
+      'Segure a corda com as palmas voltadas para baixo',
+      'Puxe a corda em direção ao rosto dividindo a corda em dois lados',
+      'Cotovelos para fora e para cima ao final do movimento',
+      'Mantenha a posição 1 segundo e retorne controlando',
+    ],
+    series:'3',reps:'15–20',descanso:'45s',
+    dicas:['Faça em todo treino de ombros','Carga leve, volume alto','Previne lesões no manguito rotador'],
+    nivel_series:{iniciante:'3x20',intermediario:'3x15-20',avancado:'4x15'},
+  },
+
+  // ── BÍCEPS ────────────────────────────────────────────────
+  rosca_direta:{
+    nome:'Rosca Direta com Barra', musculo:'Bíceps', grupo:'biceps',
+    dificuldade:'iniciante', equipamento:'barra reta ou EZ',
+    yt:'https://www.youtube.com/embed/ykJmrZ5v0Oo',
+    descricao:'O exercício mais clássico para bíceps. Recruta bíceps braquial, braquial anterior e braquiorradial.',
+    execucao:[
+      'Fique em pé segurando a barra com pegada supinada, largura dos ombros',
+      'Cotovelos fixos ao lado do corpo durante todo o movimento',
+      'Dobre os cotovelos trazendo a barra até a altura dos ombros',
+      'Contraia fortemente o bíceps no topo sem balançar o tronco',
+      'Desça de forma lenta e controlada até extensão completa',
+    ],
+    series:'3',reps:'10–12',descanso:'60s',
+    dicas:['Cotovelos fixos — não "roube"','Amplitude total para baixo','Barra EZ é mais confortável no punho'],
+    nivel_series:{iniciante:'3x12',intermediario:'4x10',avancado:'4x8 pesado'},
+  },
+  rosca_martelo:{
+    nome:'Rosca Martelo com Halter', musculo:'Braquial / Braquiorradial', grupo:'biceps',
+    dificuldade:'iniciante', equipamento:'halteres',
+    yt:'https://www.youtube.com/embed/zC3nLlEvin4',
+    descricao:'Varia o ângulo do punho para ativar o braquial anterior e braquiorradial. Fundamental para braços espessos.',
+    execucao:[
+      'Fique em pé ou sente com os halteres com pegada neutra (polegar para cima)',
+      'Flexione o cotovelo trazendo o halter até o ombro',
+      'Mantenha o punho em posição neutra durante todo o movimento',
+      'Alterne ou execute simultaneamente',
+      'Controle total na descida',
+    ],
+    series:'3',reps:'12',descanso:'60s',
+    dicas:['Pegada neutra o tempo todo','Não gire o punho','Excelente para espessura do braço'],
+    nivel_series:{iniciante:'3x12',intermediario:'3x10-12',avancado:'4x10'},
+  },
+
+  // ── TRÍCEPS ───────────────────────────────────────────────
+  triceps_polia:{
+    nome:'Tríceps na Polia (Pushdown)', musculo:'Tríceps', grupo:'triceps',
+    dificuldade:'iniciante', equipamento:'polia alta + barra/corda',
+    yt:'https://www.youtube.com/embed/2-LAMcpzODU',
+    descricao:'Exercício de isolamento para os três feixes do tríceps. Com a corda, a abertura final intensifica a contração da cabeça lateral.',
+    execucao:[
+      'Posicione a polia alta com barra reta ou corda',
+      'Segure com pegada pronada (barra) ou neutra (corda)',
+      'Cotovelos fixos ao lado do corpo, levemente à frente',
+      'Empurre para baixo até extensão completa dos cotovelos',
+      'Com a corda: abra os punhos no final para contração máxima',
+    ],
+    series:'3',reps:'12–15',descanso:'45s',
+    dicas:['Cotovelos fixos — não os leve para trás','Corda = mais contração','Carga controlada'],
+    nivel_series:{iniciante:'3x15',intermediario:'4x12-15',avancado:'4x10-12'},
+  },
+  triceps_frances:{
+    nome:'Tríceps Francês (Skull Crusher)', musculo:'Cabeça Longa do Tríceps', grupo:'triceps',
+    dificuldade:'intermediario', equipamento:'barra EZ + banco',
+    yt:'https://www.youtube.com/embed/d_KZxkY_0cM',
+    descricao:'Isolamento máximo da cabeça longa do tríceps. Também chamado de skull crusher, é excelente para ganho de massa.',
+    execucao:[
+      'Deite no banco plano segurando a barra EZ acima do peito com braços estendidos',
+      'Mantenha os cotovelos apontando para o teto e fixos',
+      'Flexione os cotovelos abaixando a barra em direção à testa/acima da cabeça',
+      'Estenda de volta à posição inicial sem mover os cotovelos',
+      'O movimento é apenas na articulação do cotovelo',
+    ],
+    series:'3',reps:'10–12',descanso:'60s',
+    dicas:['Cotovelos não abrem','Barra EZ é mais segura','Carga moderada — preserve os cotovelos'],
+    nivel_series:{iniciante:'3x12',intermediario:'4x10',avancado:'4x8-10'},
+  },
+
+  // ── QUADRÍCEPS ────────────────────────────────────────────
+  agachamento:{
+    nome:'Agachamento Livre com Barra', musculo:'Quadríceps / Glúteo / Posterior', grupo:'quadriceps',
+    dificuldade:'intermediario', equipamento:'barra + rack',
+    yt:'https://www.youtube.com/embed/ultWZbUMPL8',
+    descricao:'O rei dos exercícios para membros inferiores. Ativa quadríceps, glúteo máximo, isquiossurais e toda a musculatura estabilizadora.',
+    execucao:[
+      'Posicione a barra nas costas (abaixo dos trapézios) com mãos mais largas que os ombros',
+      'Pés afastados na largura dos ombros, bicos levemente para fora (30°)',
+      'Desça como se fosse sentar em uma cadeira — joelhos seguindo a direção dos dedos',
+      'Desça até as coxas ficarem paralelas ao chão (ou abaixo se a mobilidade permitir)',
+      'Empurre o chão para subir, mantendo o peito alto e o core contraído',
+    ],
+    series:'4',reps:'8–10',descanso:'2–3min',
+    dicas:['Joelhos não passam muito à frente dos pés','Peito alto — não arredonde','Core sempre ativo'],
+    nivel_series:{iniciante:'3x12 (goblet)',intermediario:'4x8-10',avancado:'5x5 pesado'},
+  },
+  leg_press:{
+    nome:'Leg Press 45°', musculo:'Quadríceps / Glúteo', grupo:'quadriceps',
+    dificuldade:'iniciante', equipamento:'máquina leg press',
+    yt:'https://www.youtube.com/embed/IZxyjW7MPJQ',
+    descricao:'Excelente para carga elevada com menor risco que o agachamento. A posição dos pés determina o músculo enfatizado.',
+    execucao:[
+      'Sente no aparelho com as costas totalmente apoiadas no encosto',
+      'Posicione os pés na plataforma na largura dos ombros',
+      'Retire os trancadores e dobre os joelhos em direção ao peito',
+      'Empurre a plataforma até quase a extensão dos joelhos (não trave)',
+      'Controle a descida — não deixe cair o peso',
+    ],
+    series:'3–4',reps:'10–12',descanso:'90s',
+    dicas:['Lombar colada no encosto','Nunca trave os joelhos','Pés altos = mais glúteo e posterior'],
+    nivel_series:{iniciante:'3x12',intermediario:'4x10-12',avancado:'4x8-10 +carga'},
+  },
+  cadeira_extensora:{
+    nome:'Cadeira Extensora', musculo:'Quadríceps (Isolamento)', grupo:'quadriceps',
+    dificuldade:'iniciante', equipamento:'máquina cadeira extensora',
+    yt:'https://www.youtube.com/embed/m0FOpMEgero',
+    descricao:'Isolamento do quadríceps. Ótimo para finalizador após compostos ou para quem não pode fazer agachamento.',
+    execucao:[
+      'Ajuste o banco para que o joelho fique alinhado ao pivô da máquina',
+      'Posicione a almofada no tornozelo (não no pé)',
+      'Estenda os joelhos até a extensão total contraindo o quadríceps',
+      'Segure 1 segundo no topo e desça em 3 segundos (excêntrico)',
+      'Não deixe o joelho "chocar" na flexão total',
+    ],
+    series:'3',reps:'12–15',descanso:'45s',
+    dicas:['Não use impulso','Excêntrico lento = mais resultado','Cuidado com dor patelar'],
+    nivel_series:{iniciante:'3x15',intermediario:'3x12-15',avancado:'4x12 + pausa'},
+  },
+  afundo:{
+    nome:'Afundo (Lunge) com Halter', musculo:'Quadríceps / Glúteo', grupo:'quadriceps',
+    dificuldade:'iniciante', equipamento:'halteres (opcional)',
+    yt:'https://www.youtube.com/embed/D7KaRcUTQeE',
+    descricao:'Exercício unilateral que corrije desequilíbrios entre as pernas, ativa o core e tem alto valor funcional.',
+    execucao:[
+      'Fique em pé com os pés juntos, halteres nas laterais (ou mãos na cintura)',
+      'Dê um passo longo à frente com uma perna',
+      'Desça o joelho traseiro em direção ao chão sem tocar',
+      'Joelho da frente não passa do bico do pé; fique na vertical',
+      'Empurre com o calcanhar da frente para voltar à posição inicial',
+    ],
+    series:'3',reps:'10–12 por perna',descanso:'60s',
+    dicas:['Tronco ereto','Joelho da frente alinhado','Pode fazer caminhando para mais volume'],
+    nivel_series:{iniciante:'3x12 (sem peso)',intermediario:'4x10-12',avancado:'4x10 +carga'},
+  },
+
+  // ── POSTERIOR / GLÚTEO ────────────────────────────────────
+  mesa_flexora:{
+    nome:'Mesa Flexora (Leg Curl)', musculo:'Isquiossurais', grupo:'posterior',
+    dificuldade:'iniciante', equipamento:'máquina mesa flexora',
+    yt:'https://www.youtube.com/embed/1Tq3QdYUuHs',
+    descricao:'Isolamento dos isquiossurais (posterior da coxa). Fundamental para equilíbrio muscular e prevenção de lesões.',
+    execucao:[
+      'Deite na máquina com o joelho alinhado ao pivô',
+      'Posicione a almofada na dobra do tornozelo/calcanhar',
+      'Flexione os joelhos trazendo a almofada em direção aos glúteos',
+      'Segure a contração no topo por 1 segundo',
+      'Desça de forma lenta e controlada',
+    ],
+    series:'3',reps:'12–15',descanso:'60s',
+    dicas:['Quadril fixo na mesa','Excêntrico lento','Não use impulso'],
+    nivel_series:{iniciante:'3x15',intermediario:'4x12',avancado:'4x10-12 +pausa'},
+  },
+  rdl:{
+    nome:'Stiff (RDL) com Barra', musculo:'Isquiossurais / Glúteo', grupo:'posterior',
+    dificuldade:'intermediario', equipamento:'barra',
+    yt:'https://www.youtube.com/embed/1uDiW5--rAE',
+    descricao:'O melhor exercício para elongar e fortalecer os isquiossurais. Diferente do levantamento terra — os joelhos ficam quase estendidos.',
+    execucao:[
+      'Segure a barra na frente das coxas com pegada pronada',
+      'Pernas quase estendidas (pequena flexão para não travar o joelho)',
+      'Empurre o quadril para trás deixando o tronco inclinar à frente',
+      'Desça a barra rente às pernas até sentir forte alongamento nos posteriores',
+      'Contraia o glúteo para voltar à posição inicial empurrando o quadril à frente',
+    ],
+    series:'3–4',reps:'10–12',descanso:'90s',
+    dicas:['Coluna neutra — não arredonde','Barra rente às pernas','Sinta o alongamento, não a carga'],
+    nivel_series:{iniciante:'3x12 halteres',intermediario:'4x10',avancado:'4x8 pesado'},
+  },
+  hip_thrust:{
+    nome:'Hip Thrust com Barra', musculo:'Glúteo Máximo', grupo:'posterior',
+    dificuldade:'iniciante', equipamento:'barra + banco + protetor',
+    yt:'https://www.youtube.com/embed/Zp26q4BY5HE',
+    descricao:'O melhor exercício para ativação do glúteo máximo. Independente do objetivo, o hip thrust deve estar no treino.',
+    execucao:[
+      'Apoie a parte superior das costas no banco (borda na altura das escápulas)',
+      'Barra posicionada no quadril com protetor de esponja',
+      'Pés afastados na largura do quadril, ligeiramente à frente dos joelhos',
+      'Empurre o quadril para cima até a posição neutra da coluna',
+      'Segure 1–2 segundos no topo com contração máxima do glúteo',
+    ],
+    series:'4',reps:'10–15',descanso:'90s',
+    dicas:['Queixo baixo, olhar neutro','Joelhos a 90° no topo','Apertar glúteo no topo é essencial'],
+    nivel_series:{iniciante:'3x15 (peso corp)',intermediario:'4x10-12',avancado:'4x8-10 pesado'},
+  },
+
+  // ── ABDÔMEN ───────────────────────────────────────────────
+  prancha:{
+    nome:'Prancha Isométrica', musculo:'Core / Abdômen / Estabilizadores', grupo:'abdomen',
+    dificuldade:'iniciante', equipamento:'nenhum (tapete)',
+    yt:'https://www.youtube.com/embed/pSHjTRCQxIw',
+    descricao:'O exercício isométrico mais eficaz para fortalecer todo o core de forma segura. Ativa reto abdominal, transverso e oblíquos.',
+    execucao:[
+      'Deite de bruços e apoie nos antebraços e dedos dos pés',
+      'Alinhe cotovelos abaixo dos ombros, antebraços paralelos',
+      'Mantenha o corpo em linha reta da cabeça aos calcanhares',
+      'Contraia o abdômen, glúteo e quadríceps simultaneamente',
+      'Respire normalmente durante a sustentação',
+    ],
+    series:'3',reps:'30–60s',descanso:'30s',
+    dicas:['Não deixe o quadril afundar','Olhar para o chão','Progrida: pés no banco, peso nas costas'],
+    nivel_series:{iniciante:'3x30s',intermediario:'3x45-60s',avancado:'4x60s+ variações'},
+  },
+  abdominal_bicicleta:{
+    nome:'Abdominal Bicicleta', musculo:'Oblíquos / Reto Abdominal', grupo:'abdomen',
+    dificuldade:'iniciante', equipamento:'nenhum',
+    yt:'https://www.youtube.com/embed/Iwyvozckjak',
+    descricao:'Um dos melhores exercícios para ativação abdominal segundo o ACE Research. Trabalha os oblíquos e o reto simultâneamente.',
+    execucao:[
+      'Deite de costas com as mãos atrás da cabeça (sem pressionar o pescoço)',
+      'Levante as pernas com joelhos a 90°',
+      'Leve o cotovelo direito ao joelho esquerdo enquanto estende a perna direita',
+      'Alterne o lado de forma fluida como se estivesse pedalando',
+      'Mantenha a lombar pressionada contra o chão',
+    ],
+    series:'3',reps:'20–30 (total)',descanso:'30s',
+    dicas:['Movimento lento e controlado','Mãos apoiam, não puxam a cabeça','Lombar colada no chão'],
+    nivel_series:{iniciante:'3x20',intermediario:'3x30',avancado:'4x40 lento'},
+  },
+  roda_abdominal:{
+    nome:'Roda Abdominal (Ab Wheel)', musculo:'Core Completo / Flexores do Quadril', grupo:'abdomen',
+    dificuldade:'avancado', equipamento:'roda abdominal',
+    yt:'https://www.youtube.com/embed/VdGIaHjCRjI',
+    descricao:'Um dos exercícios mais desafiadores para o core. Exige grande força do abdômen para controlar a extensão e o retorno.',
+    execucao:[
+      'Ajoelhe-se segurando a roda com os braços estendidos',
+      'Empurre a roda à frente enquanto controla a descida do quadril e tronco',
+      'Vá até onde conseguir manter o core ativado (não deixe a lombar afundar)',
+      'Puxe de volta usando a força do abdômen, não das costas',
+      'Iniciantes: faça em pé contra a parede (menor amplitude)',
+    ],
+    series:'3',reps:'5–10',descanso:'60s',
+    dicas:['Controle total do core','Lombar não arredonda demais','Progrida a amplitude gradualmente'],
+    nivel_series:{iniciante:'3x5 (parcial)',intermediario:'3x8',avancado:'4x10 amplitude total'},
+  },
+
+  // ── PANTURRILHA ───────────────────────────────────────────
+  geminada_em_pe:{
+    nome:'Gêmeos em Pé (Calf Raise)', musculo:'Gastrocnêmio / Sóleo', grupo:'panturrilha',
+    dificuldade:'iniciante', equipamento:'degrau / máquina',
+    yt:'https://www.youtube.com/embed/-M4-G8p1fCI',
+    descricao:'Desenvolvimento da panturrilha exige alto volume. O gêmeo (gastrocnêmio) é melhor ativado com joelho estendido.',
+    execucao:[
+      'Fique no borda de um degrau com os calcanhares para fora (0 apoio)',
+      'Segure algo para equilíbrio apenas — não para ajudar',
+      'Desça os calcanhares abaixo do degrau para alongamento total',
+      'Suba nas pontas dos pés o máximo possível',
+      'Segure 1–2 segundos no topo contraindo a panturrilha',
+    ],
+    series:'4',reps:'15–20',descanso:'45s',
+    dicas:['Amplitude total é fundamental','Volume alto: panturrilha aguenta mais','Faça 3x por semana'],
+    nivel_series:{iniciante:'4x20 (peso corp)',intermediario:'4x15-20 +peso',avancado:'5x15 +carga pesada'},
+  },
+
+  // ── CARDIO / CONDICIONAMENTO ──────────────────────────────
+  burpee:{
+    nome:'Burpee', musculo:'Full Body / Condicionamento', grupo:'cardio',
+    dificuldade:'intermediario', equipamento:'nenhum',
+    yt:'https://www.youtube.com/embed/dZgVxmf6jkA',
+    descricao:'Exercício de alta intensidade que combina agachamento, prancha, flexão e salto. Queima muitas calorias e eleva o condicionamento rapidamente.',
+    execucao:[
+      'Fique em pé, então agache e coloque as mãos no chão',
+      'Jogue os pés para trás ficando em posição de prancha',
+      'Faça uma flexão (opcional mas recomendado)',
+      'Traga os pés de volta para perto das mãos',
+      'Salte para o alto com os braços acima da cabeça',
+    ],
+    series:'3–4',reps:'10–15 ou 30s',descanso:'30–60s',
+    dicas:['Modifique sem salto se necessário','Ritmo que consiga manter','Excelente para circuitos'],
+    nivel_series:{iniciante:'3x8',intermediario:'4x12',avancado:'4x15 ou AMRAP'},
+  },
+  kettlebell_swing:{
+    nome:'Kettlebell Swing', musculo:'Posterior / Core / Ombros', grupo:'cardio',
+    dificuldade:'intermediario', equipamento:'kettlebell',
+    yt:'https://www.youtube.com/embed/YSxHifyI6s8',
+    descricao:'Um dos movimentos mais eficientes da academia. Combina força, explosão e condicionamento em um único movimento.',
+    execucao:[
+      'Fique em pé com o kettlebell à frente, pés mais largos que os ombros',
+      'Segure com as duas mãos e deixe o kettlebell balançar entre as pernas',
+      'Empurre o quadril à frente explosivamente para propulsionar o KB para cima',
+      'O KB vai até a altura dos ombros pelo impulso do quadril, não pelos braços',
+      'Deixe voltar e repita o movimento de forma fluida e contínua',
+    ],
+    series:'3–5',reps:'15–20 ou 30s',descanso:'30–60s',
+    dicas:['Força vem do quadril, não dos braços','Mantenha a coluna neutra','Excelente finalizador'],
+    nivel_series:{iniciante:'3x15 (leve)',intermediario:'4x20',avancado:'5x20 ou carga + volume'},
+  },
+};
+
+// ═══════════════════════════════════════════════════════════
+//  PLANOS DE TREINO
+// ═══════════════════════════════════════════════════════════
+const PLANOS = {
+
+  // ── INICIANTE ────────────────────────────────────────────
+  iniciante: {
+    2: {
+      nome:'Full Body A/B',
+      descricao:'Dois dias de treino com descanso entre eles. Trabalha o corpo todo em cada sessão.',
+      dias:[
+        {nome:'Dia A — Full Body',tipo:'Corpo todo',grupos:['peito','costas','quadriceps','abdomen'],
+         aquecimento:'5–10 min de esteira/bicicleta leve + mobilidade de quadril e ombros.',
+         exercicios:['supino_reto','puxada_frontal','agachamento','elevacao_lateral','prancha','abdominal_bicicleta'],
+         volta:'5 min caminhada + alongamento de quadríceps, peito e costas (30s cada).'},
+        {nome:'Dia B — Full Body',tipo:'Corpo todo',grupos:['peito','posterior','ombros','biceps','triceps'],
+         aquecimento:'5–10 min de esteira leve + rotação de ombros e mobilidade de tornozelo.',
+         exercicios:['supino_inclinado','rdl','desenvolvimento_halter','rosca_direta','triceps_polia','prancha'],
+         volta:'5 min caminhada + alongamento de isquiossurais, ombros e peito.'},
+        {nome:'Descanso','tipo':'rest'},
+        {nome:'Descanso','tipo':'rest'},
+        {nome:'Descanso','tipo':'rest'},
+        {nome:'Descanso','tipo':'rest'},
+        {nome:'Descanso','tipo':'rest'},
+      ]
+    },
+    3: {
+      nome:'Full Body 3x',
+      descricao:'Três dias alternados com descanso entre sessões. Ideal para iniciantes maximizarem a frequência.',
+      dias:[
+        {nome:'Seg — Full Body',tipo:'Corpo todo',aquecimento:'10 min esteira leve + ativação de glúteo e ombros.',
+         exercicios:['agachamento','supino_reto','puxada_frontal','desenvolvimento_halter','rosca_direta','prancha'],
+         volta:'Alongamento completo: quadríceps, isquiossurais, peito, costas (30s cada).'},
+        {nome:'Ter — Descanso Ativo',tipo:'rest'},
+        {nome:'Qua — Full Body',tipo:'Corpo todo',aquecimento:'10 min bicicleta + mobilidade de quadril.',
+         exercicios:['leg_press','supino_inclinado','remada_curvada','elevacao_lateral','triceps_polia','abdominal_bicicleta'],
+         volta:'Alongamento: panturrilha, peito, costas, ombros.'},
+        {nome:'Qui — Descanso',tipo:'rest'},
+        {nome:'Sex — Full Body',tipo:'Corpo todo',aquecimento:'10 min esteira + ativação de core.',
+         exercicios:['afundo','crucifixo','pullup','rosca_martelo','triceps_frances','prancha'],
+         volta:'Alongamento completo de 10 min.'},
+        {nome:'Sáb — Descanso',tipo:'rest'},
+        {nome:'Dom — Descanso',tipo:'rest'},
+      ]
+    },
+    4: {
+      nome:'Upper/Lower',
+      descricao:'Divide o treino entre membros superiores e inferiores. Cada grupo é trabalhado 2x por semana.',
+      dias:[
+        {nome:'Seg — Upper A',tipo:'Superior',aquecimento:'5 min mobilidade de ombros e pulsos.',
+         exercicios:['supino_reto','puxada_frontal','desenvolvimento_halter','rosca_direta','triceps_polia'],
+         volta:'Alongamento de peito, costas e ombros.'},
+        {nome:'Ter — Lower A',tipo:'Inferior',aquecimento:'10 min bicicleta + mobilidade de quadril.',
+         exercicios:['agachamento','rdl','cadeira_extensora','mesa_flexora','geminada_em_pe'],
+         volta:'Alongamento de quadríceps, isquiossurais e panturrilha.'},
+        {nome:'Qua — Descanso',tipo:'rest'},
+        {nome:'Qui — Upper B',tipo:'Superior',aquecimento:'5 min mobilidade de ombros.',
+         exercicios:['supino_inclinado','remada_curvada','elevacao_lateral','rosca_martelo','triceps_frances'],
+         volta:'Alongamento de peito, bíceps e tríceps.'},
+        {nome:'Sex — Lower B',tipo:'Inferior',aquecimento:'10 min esteira + ativação de glúteo.',
+         exercicios:['leg_press','hip_thrust','afundo','mesa_flexora','prancha','abdominal_bicicleta'],
+         volta:'Alongamento de glúteo, isquiossurais e abdômen.'},
+        {nome:'Sáb — Descanso',tipo:'rest'},
+        {nome:'Dom — Descanso',tipo:'rest'},
+      ]
+    },
+  },
+
+  // ── INTERMEDIÁRIO ─────────────────────────────────────────
+  intermediario: {
+    3: {
+      nome:'ABC (Push/Pull/Legs)',
+      descricao:'Divisão clássica em 3 grupos. Cada grupo uma vez por semana com volume moderado-alto.',
+      dias:[
+        {nome:'Seg — Push (Empurrar)',tipo:'Peito / Ombros / Tríceps',
+         aquecimento:'5 min mobilidade de ombros + ativação de manguito rotador com elástico.',
+         exercicios:['supino_reto','supino_inclinado','desenvolvimento_halter','elevacao_lateral','face_pull','triceps_polia','triceps_frances'],
+         volta:'Alongamento de peitoral, deltoide anterior e tríceps.'},
+        {nome:'Ter — Descanso',tipo:'rest'},
+        {nome:'Qua — Pull (Puxar)',tipo:'Costas / Bíceps',
+         aquecimento:'5 min remo ergométrico + mobilidade de escápula.',
+         exercicios:['pullup','remada_curvada','puxada_frontal','rosca_direta','rosca_martelo','face_pull'],
+         volta:'Alongamento de grande dorsal, bíceps e trapézio.'},
+        {nome:'Qui — Descanso',tipo:'rest'},
+        {nome:'Sex — Legs',tipo:'Pernas / Glúteo / Core',
+         aquecimento:'10 min bicicleta + ativação de glúteo deitado + mobilidade de tornozelo.',
+         exercicios:['agachamento','leg_press','rdl','hip_thrust','cadeira_extensora','mesa_flexora','geminada_em_pe','prancha'],
+         volta:'Alongamento completo de membros inferiores (10 min).'},
+        {nome:'Sáb — Descanso',tipo:'rest'},
+        {nome:'Dom — Descanso',tipo:'rest'},
+      ]
+    },
+    4: {
+      nome:'Upper/Lower Intermediário',
+      descricao:'4 dias com maior volume e intensidade que a versão iniciante. Inclui sobrecarga progressiva.',
+      dias:[
+        {nome:'Seg — Upper Força',tipo:'Superior pesado',
+         aquecimento:'Ativação de ombros + 2 séries leves de supino.',
+         exercicios:['supino_reto','remada_curvada','desenvolvimento_halter','puxada_frontal','face_pull','triceps_frances'],
+         volta:'Alongamento de peito e costas.'},
+        {nome:'Ter — Lower Força',tipo:'Inferior pesado',
+         aquecimento:'10 min bicicleta + ativação de glúteo.',
+         exercicios:['agachamento','levantamento_terra','rdl','geminada_em_pe','prancha','abdominal_bicicleta'],
+         volta:'Alongamento de 10 min membros inferiores.'},
+        {nome:'Qua — Descanso',tipo:'rest'},
+        {nome:'Qui — Upper Hipertrofia',tipo:'Superior volume',
+         aquecimento:'Mobilidade de ombros e pulsos.',
+         exercicios:['supino_inclinado','pullup','crucifixo','elevacao_lateral','rosca_direta','rosca_martelo','triceps_polia'],
+         volta:'Alongamento de bíceps, tríceps e ombros.'},
+        {nome:'Sex — Lower Hipertrofia',tipo:'Inferior volume',
+         aquecimento:'10 min esteira + ativação de glúteo.',
+         exercicios:['leg_press','hip_thrust','afundo','cadeira_extensora','mesa_flexora','geminada_em_pe'],
+         volta:'Alongamento de glúteo, isquiossurais e panturrilha.'},
+        {nome:'Sáb — Descanso',tipo:'rest'},
+        {nome:'Dom — Descanso',tipo:'rest'},
+      ]
+    },
+    5: {
+      nome:'ABCDE (5 dias)',
+      descricao:'Treino de 5 dias com cada grupo muscular uma vez por semana. Alto volume por sessão.',
+      dias:[
+        {nome:'Seg — Peito',tipo:'Peitoral + Tríceps (aux)',
+         aquecimento:'Mobilidade de ombros + ativação com elástico.',
+         exercicios:['supino_reto','supino_inclinado','crucifixo','mergulho_peito','triceps_frances','triceps_polia'],
+         volta:'Alongamento de peitoral e ombros.'},
+        {nome:'Ter — Costas',tipo:'Costas + Bíceps (aux)',
+         aquecimento:'Remo ergométrico 5 min + mobilidade de escápula.',
+         exercicios:['pullup','remada_curvada','puxada_frontal','levantamento_terra','rosca_direta','rosca_martelo'],
+         volta:'Alongamento de grande dorsal e bíceps.'},
+        {nome:'Qua — Pernas',tipo:'Pernas completo',
+         aquecimento:'10 min bicicleta + ativação de glúteo e mobilidade.',
+         exercicios:['agachamento','leg_press','rdl','cadeira_extensora','mesa_flexora','hip_thrust','geminada_em_pe'],
+         volta:'Alongamento completo de membros inferiores.'},
+        {nome:'Qui — Ombros',tipo:'Deltoides + Core',
+         aquecimento:'Círculos de ombros + face pull leve.',
+         exercicios:['desenvolvimento_halter','elevacao_lateral','face_pull','burpee','prancha','abdominal_bicicleta'],
+         volta:'Alongamento de ombros, pescoço e core.'},
+        {nome:'Sex — Braços',tipo:'Bíceps + Tríceps direto',
+         aquecimento:'Aquecimento articular de cotovelos e pulsos.',
+         exercicios:['rosca_direta','rosca_martelo','triceps_polia','triceps_frances','kettlebell_swing','roda_abdominal'],
+         volta:'Alongamento de bíceps, tríceps e antebraços.'},
+        {nome:'Sáb — Descanso',tipo:'rest'},
+        {nome:'Dom — Descanso',tipo:'rest'},
+      ]
+    },
+  },
+
+  // ── AVANÇADO ──────────────────────────────────────────────
+  avancado: {
+    4: {
+      nome:'Upper/Lower Avançado (DUP)',
+      descricao:'Periodização Diária Ondulante. Cada sessão tem intensidade diferente (força vs. hipertrofia vs. potência).',
+      dias:[
+        {nome:'Seg — Upper Força',tipo:'Superior – Força (5x5)',
+         aquecimento:'Aquecimento específico: 3 séries progressivas leves de supino.',
+         exercicios:['supino_reto','remada_curvada','desenvolvimento_halter','pullup','face_pull'],
+         nota:'Foco em cargas máximas. 5x5 em compostos, descanso 3–4min.',
+         volta:'Mobilidade pós-treino de ombros e coluna torácica.'},
+        {nome:'Ter — Lower Força',tipo:'Inferior – Força (5x5)',
+         aquecimento:'10 min ativação + 3 séries de agachamento progressivas.',
+         exercicios:['agachamento','levantamento_terra','rdl','hip_thrust','geminada_em_pe'],
+         nota:'Levantamentos principais 5x5. Acessórios 3x8.',
+         volta:'Mobilidade de quadril e coluna lombar.'},
+        {nome:'Qua — Descanso / Ativo',tipo:'rest'},
+        {nome:'Qui — Upper Hipertrofia',tipo:'Superior – Hipertrofia (4x8-12)',
+         aquecimento:'Ativação de ombros e mobilidade.',
+         exercicios:['supino_inclinado','pullup','crucifixo','elevacao_lateral','rosca_direta','triceps_frances','face_pull'],
+         nota:'Cargas moderadas, alta amplitude, tempo sob tensão 3-1-2.',
+         volta:'Alongamento de peitoral, costas e braços.'},
+        {nome:'Sex — Lower Hipertrofia',tipo:'Inferior – Volume (4x10-15)',
+         aquecimento:'Bicicleta 10 min + ativação de glúteo.',
+         exercicios:['leg_press','afundo','hip_thrust','cadeira_extensora','mesa_flexora','geminada_em_pe','roda_abdominal'],
+         nota:'Volume alto, isometria e drop-sets nos finalizadores.',
+         volta:'Alongamento completo membros inferiores (15 min).'},
+        {nome:'Sáb — Descanso',tipo:'rest'},
+        {nome:'Dom — Descanso',tipo:'rest'},
+      ]
+    },
+    5: {
+      nome:'PPL Avançado x2 (Push/Pull/Legs)',
+      descricao:'Rotação Push/Pull/Legs com 5 dias. Cada grupo treinado ~1,5x por semana com alto volume.',
+      dias:[
+        {nome:'Seg — Push A (Força)',tipo:'Peito pesado + Ombros + Tríceps',
+         aquecimento:'Face pull leve 2x20 + mobilidade de ombros.',
+         exercicios:['supino_reto','supino_inclinado','desenvolvimento_halter','mergulho_peito','elevacao_lateral','triceps_frances'],
+         volta:'Mobilidade pós-treino de ombros.'},
+        {nome:'Ter — Pull A (Força)',tipo:'Costas pesada + Bíceps',
+         aquecimento:'Remo ergométrico 5min + mobilização escápula.',
+         exercicios:['levantamento_terra','pullup','remada_curvada','puxada_frontal','rosca_direta','face_pull'],
+         volta:'Alongamento de grande dorsal e bíceps.'},
+        {nome:'Qua — Legs',tipo:'Pernas completo',
+         aquecimento:'10min bicicleta + ativação glúteo + mobilidade tornozelo.',
+         exercicios:['agachamento','leg_press','rdl','hip_thrust','cadeira_extensora','mesa_flexora','geminada_em_pe','roda_abdominal'],
+         volta:'Alongamento de 15 min membros inferiores.'},
+        {nome:'Qui — Push B (Volume)',tipo:'Peito/Ombros volume alto',
+         aquecimento:'Ativação de ombros com elástico.',
+         exercicios:['supino_inclinado','crucifixo','elevacao_lateral','face_pull','triceps_polia','kettlebell_swing'],
+         volta:'Alongamento de peito e ombros.'},
+        {nome:'Sex — Pull B (Volume)',tipo:'Costas volume + braços',
+         aquecimento:'Remo leve 3 min.',
+         exercicios:['pullup','puxada_frontal','remada_curvada','rosca_direta','rosca_martelo','triceps_frances','prancha'],
+         volta:'Alongamento de costas, bíceps e tríceps.'},
+        {nome:'Sáb — Descanso',tipo:'rest'},
+        {nome:'Dom — Descanso',tipo:'rest'},
+      ]
+    },
+    6: {
+      nome:'PHUL Avançado (6 dias)',
+      descricao:'Power Hypertrophy Upper Lower de 6 dias. Dois dias focados em força pura, quatro em hipertrofia.',
+      dias:[
+        {nome:'Seg — Upper Força',tipo:'Superior – Força máxima',
+         aquecimento:'Séries progressivas de aquecimento em supino e remada.',
+         exercicios:['supino_reto','remada_curvada','desenvolvimento_halter','pullup','triceps_frances','rosca_direta'],
+         nota:'4x4-6 nos compostos principais. Descanso 3-5min.',
+         volta:'Mobilidade de ombros e coluna.'},
+        {nome:'Ter — Lower Força',tipo:'Inferior – Força máxima',
+         aquecimento:'Séries progressivas de agachamento + ativação de glúteo.',
+         exercicios:['agachamento','levantamento_terra','rdl','geminada_em_pe','prancha'],
+         nota:'4x4-6 nos compostos. Descanso 3-5min.',
+         volta:'Mobilidade de quadril e joelhos.'},
+        {nome:'Qua — Upper Hipertrofia',tipo:'Superior – Volume e amplitude',
+         aquecimento:'Face pull 2x20 + mobilidade.',
+         exercicios:['supino_inclinado','crucifixo','puxada_frontal','elevacao_lateral','face_pull','rosca_martelo','triceps_polia'],
+         nota:'4x8-12 com tempo sob tensão 3-1-2. Descanso 60-90s.',
+         volta:'Alongamento de peito, ombros e braços.'},
+        {nome:'Qui — Lower Hipertrofia A',tipo:'Pernas volume – Quadríceps',
+         aquecimento:'Bicicleta 10min + ativação.',
+         exercicios:['leg_press','afundo','cadeira_extensora','hip_thrust','mesa_flexora','geminada_em_pe'],
+         nota:'4x10-15. Drop-set no último set de cadeira extensora.',
+         volta:'Alongamento de quadríceps e glúteo.'},
+        {nome:'Sex — Upper Hipertrofia II',tipo:'Superior – Volume braços',
+         aquecimento:'Ativação de ombros.',
+         exercicios:['mergulho_peito','pullup','desenvolvimento_halter','elevacao_lateral','rosca_direta','triceps_frances','roda_abdominal'],
+         nota:'Volume alto. Superseries de bíceps/tríceps.',
+         volta:'Alongamento de braços e ombros.'},
+        {nome:'Sáb — Lower Hipertrofia B',tipo:'Pernas volume – Posterior e Glúteo',
+         aquecimento:'10min esteira + ativação de glúteo.',
+         exercicios:['rdl','hip_thrust','cadeira_extensora','mesa_flexora','afundo','geminada_em_pe','abdominal_bicicleta'],
+         nota:'Ênfase em posterior e glúteo. Contrações isométricas.',
+         volta:'Alongamento completo de membros inferiores.'},
+        {nome:'Dom — Descanso Total',tipo:'rest'},
+      ]
+    },
+  },
+};
+
+// ═══════════════════════════════════════════════════════════
+//  ESTADO
+// ═══════════════════════════════════════════════════════════
+let CONFIG = {nivel:null, objetivo:null, dias:null, focos:[]};
+let PLANO_ATUAL = null;
+let DIA_ATIVO   = 0;
+
+// ═══════════════════════════════════════════════════════════
+//  WIZARD
+// ═══════════════════════════════════════════════════════════
+function goStep(n) {
+  // Validações
+  if(n===2 && !CONFIG.nivel){ alert('Selecione seu nível.'); return; }
+  if(n===3 && !CONFIG.objetivo){ alert('Selecione seu objetivo.'); return; }
+  if(n===4 && !CONFIG.dias){ alert('Selecione quantos dias.'); return; }
+
+  document.querySelectorAll('.step').forEach(s=>s.classList.remove('active'));
+  document.getElementById(`step-${n}`).classList.add('active');
+
+  // Atualiza dots
+  for(let i=1;i<=4;i++){
+    const dot=document.getElementById(`sd-${i}`);
+    dot.classList.remove('active','done');
+    if(i<n) dot.classList.add('done');
+    if(i===n) dot.classList.add('active');
+    if(i<4){
+      const ln=document.getElementById(`sl-${i}`);
+      ln.classList.toggle('done', i<n);
+    }
+  }
+}
+
+function selLevel(el) {
+  document.querySelectorAll('.level-card').forEach(c=>c.classList.remove('selected'));
+  el.classList.add('selected');
+  CONFIG.nivel = el.dataset.level;
+}
+
+function selGoal(el) {
+  document.querySelectorAll('.goal-card').forEach(c=>c.classList.remove('selected'));
+  el.classList.add('selected');
+  CONFIG.objetivo = el.dataset.goal;
+}
+
+const DIAS_INFO = {
+  2:'💡 2 dias é suficiente para iniciantes. Treinos Full Body (corpo todo) aproveitam ao máximo os 2 dias.',
+  3:'✅ 3 dias é o ponto ideal de eficiência. Alta frequência sem overtraining. Recomendado para a maioria.',
+  4:'⚡ 4 dias permite dividir superior/inferior. Bom equilíbrio entre volume e recuperação.',
+  5:'🔥 5 dias para quem busca alto volume. Boa opção para intermediários e avançados.',
+  6:'💪 6 dias requer disciplina e boa nutrição. Indicado apenas para avançados com boa recuperação.',
+};
+
+function selDays(el) {
+  document.querySelectorAll('.day-btn').forEach(b=>b.classList.remove('selected'));
+  el.classList.add('selected');
+  CONFIG.dias = parseInt(el.dataset.days);
+  const info = document.getElementById('days-info');
+  info.style.display='block';
+  info.textContent = DIAS_INFO[CONFIG.dias] || '';
+}
+
+function toggleFocus(el) {
+  el.classList.toggle('sel');
+  CONFIG.focos = Array.from(document.querySelectorAll('.focus-chip.sel')).map(e=>e.dataset.focus);
+}
+
+// ═══════════════════════════════════════════════════════════
+//  GERAR TREINO
+// ═══════════════════════════════════════════════════════════
+function gerarTreino() {
+  const {nivel, objetivo, dias} = CONFIG;
+
+  // Encontra o plano mais próximo dos dias disponíveis
+  const opcoesDias = Object.keys(PLANOS[nivel]).map(Number).sort((a,b)=>a-b);
+  let diasEfetivos = opcoesDias.reduce((prev,curr) =>
+    Math.abs(curr-dias) < Math.abs(prev-dias) ? curr : prev
+  );
+  PLANO_ATUAL = PLANOS[nivel][diasEfetivos];
+
+  // Esconde wizard, mostra plano
+  document.getElementById('wizard-wrap').style.display='none';
+  document.getElementById('plano-wrap').style.display='block';
+
+  // Header do plano
+  const nomes = {iniciante:'🌱 Iniciante',intermediario:'⚡ Intermediário',avancado:'💪 Avançado'};
+  const objs  = {hipertrofia:'Hipertrofia',forca:'Força',emagrecimento:'Emagrecimento',
+                 condicionamento:'Condicionamento',reabilitacao:'Reabilitação',atletico:'Atlético'};
+  document.getElementById('plano-title').textContent = PLANO_ATUAL.nome;
+  document.getElementById('plano-meta').textContent  =
+    `${nomes[nivel]} · Objetivo: ${objs[objetivo]||objetivo} · ${diasEfetivos} dias/semana`;
+
+  const treinos = PLANO_ATUAL.dias.filter(d=>d.tipo!=='rest');
+  const totalEx = treinos.reduce((acc,d)=>acc+(d.exercicios?.length||0),0);
+
+  document.getElementById('plano-stats').innerHTML = `
+    <div class="pstat"><div class="pstat-val">${diasEfetivos}</div><div class="pstat-lbl">dias/semana</div></div>
+    <div class="pstat"><div class="pstat-val">${treinos.length}</div><div class="pstat-lbl">treinos</div></div>
+    <div class="pstat"><div class="pstat-val">${totalEx}</div><div class="pstat-lbl">exercícios</div></div>
+    <div class="pstat"><div class="pstat-val">${nivel==='iniciante'?'45–60':nivel==='intermediario'?'60–75':'75–90'}</div><div class="pstat-lbl">min/treino</div></div>
+  `;
+
+  // Tabs dos dias
+  const tabs = document.getElementById('week-tabs');
+  tabs.innerHTML = PLANO_ATUAL.dias.map((d,i) => `
+    <div class="wtab ${i===0?'active':''}" onclick="mostrarDia(${i})" id="wtab-${i}">
+      ${d.nome.split(' — ')[0]}
+    </div>
+  `).join('');
+
+  DIA_ATIVO = 0;
+  mostrarDia(0);
+}
+
+function mostrarDia(idx) {
+  DIA_ATIVO = idx;
+  document.querySelectorAll('.wtab').forEach((t,i)=>t.classList.toggle('active',i===idx));
+  const dia = PLANO_ATUAL.dias[idx];
+  const wrap = document.getElementById('treino-dia');
+
+  if(dia.tipo==='rest') {
+    wrap.innerHTML = `
+      <div style="text-align:center;padding:48px 20px;color:var(--muted)">
+        <div style="font-size:48px;margin-bottom:12px">😴</div>
+        <div style="font-family:'Cabinet Grotesk',sans-serif;font-size:20px;font-weight:700;margin-bottom:6px">Descanso</div>
+        <div style="font-size:12px;line-height:1.7">O crescimento muscular acontece durante o descanso, não na academia.<br>
+        Caminhada leve, mobilidade ou yoga são ótimas opções para o dia de folga.</div>
+      </div>`;
+    return;
+  }
+
+  const exHtml = (dia.exercicios||[]).map((key,i) => renderExCard(key, i+1)).join('');
+
+  wrap.innerHTML = `
+    <div class="dia-card">
+      <div class="dia-header">
+        <div class="dia-name">${dia.nome}</div>
+        <div class="dia-tag">${dia.tipo}</div>
+      </div>
+      ${dia.aquecimento?`<div class="warmup-box"><strong>🔥 Aquecimento:</strong> ${dia.aquecimento}</div>`:''}
+      <div class="ex-list">${exHtml}</div>
+      ${dia.volta?`<div class="warmup-box" style="margin-top:12px;background:rgba(57,224,121,.05);border-color:rgba(57,224,121,.15)"><strong style="color:var(--green)">🧘 Volta à calma:</strong> ${dia.volta}</div>`:''}
+      ${dia.nota?`<div style="margin-top:10px;padding:10px 14px;font-size:11px;color:var(--muted);background:rgba(155,140,255,.06);border:1px solid rgba(155,140,255,.15);border-radius:10px;line-height:1.6">📌 ${dia.nota}</div>`:''}
+    </div>
+  `;
+}
+
+function renderExCard(key, num) {
+  const ex = EXERCICIOS[key];
+  if(!ex) return '';
+  const series = ex.nivel_series[CONFIG.nivel] || ex.series+'x'+ex.reps;
+  return `
+    <div class="ex-card" id="exc-${key}" onclick="toggleEx('${key}')">
+      <div class="ex-head">
+        <div class="ex-num">${num}</div>
+        <div class="ex-info">
+          <div class="ex-name">${ex.nome}</div>
+          <div class="ex-meta">
+            ${series} &nbsp;·&nbsp; Descanso: ${ex.descanso}
+            &nbsp;·&nbsp; ${ex.equipamento}
+          </div>
+        </div>
+        <div class="ex-muscle">${ex.musculo}</div>
+        <div class="ex-toggle">▾</div>
+      </div>
+      <div class="ex-detail">
+        <div class="ex-detail-inner">
+          <div class="ex-video-wrap" id="vid-${key}">
+            <div style="text-align:center;color:rgba(255,255,255,.3);padding:20px">
+              <div style="font-size:32px;margin-bottom:8px">▶</div>
+              <button class="ex-play-btn" onclick="loadVideo(event,'${key}','${ex.yt}')">▶</button>
+              <div class="ex-play-label" style="margin-top:8px">${ex.nome}</div>
+            </div>
+          </div>
+          <div class="ex-desc">
+            <h4>Execução</h4>
+            <p>${ex.descricao}</p>
+            <ol class="ex-steps">
+              ${ex.execucao.map((s,i)=>`<li data-n="${i+1}">${s}</li>`).join('')}
+            </ol>
+            <div class="ex-chips">
+              ${(ex.dicas||[]).map(d=>`<span class="ex-chip tip">💡 ${d}</span>`).join('')}
+              <span class="ex-chip">${ex.equipamento}</span>
+              <span class="ex-chip">${ex.dificuldade}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>`;
+}
+
+function toggleEx(key) {
+  document.getElementById(`exc-${key}`).classList.toggle('open');
+}
+
+function loadVideo(event, key, url) {
+  event.stopPropagation();
+  const wrap = document.getElementById(`vid-${key}`);
+  wrap.innerHTML = `<iframe class="yt-frame" src="${url}?autoplay=1&rel=0" allow="autoplay;encrypted-media" allowfullscreen></iframe>`;
+}
+
+function voltarWizard() {
+  document.getElementById('wizard-wrap').style.display='block';
+  document.getElementById('plano-wrap').style.display='none';
+  // Reseta para step 1
+  document.querySelectorAll('.step').forEach(s=>s.classList.remove('active'));
+  document.getElementById('step-1').classList.add('active');
+  for(let i=1;i<=4;i++){
+    document.getElementById(`sd-${i}`).className='step-dot'+(i===1?' active':'');
+    if(i<4)document.getElementById(`sl-${i}`).className='step-line';
+  }
+}
+
+function copiarPlano() {
+  const dias = PLANO_ATUAL.dias;
+  let txt = `=== ${PLANO_ATUAL.nome} ===\n${PLANO_ATUAL.descricao}\n\n`;
+  dias.forEach(d => {
+    txt += `## ${d.nome}\n`;
+    if(d.tipo!=='rest' && d.exercicios) {
+      d.exercicios.forEach((k,i) => {
+        const ex=EXERCICIOS[k];
+        if(ex) {
+          const s=ex.nivel_series[CONFIG.nivel]||ex.series+'x'+ex.reps;
+          txt += `  ${i+1}. ${ex.nome} — ${s} (descanso: ${ex.descanso})\n`;
+        }
+      });
+    } else {
+      txt += '  → Descanso\n';
+    }
+    txt += '\n';
+  });
+  navigator.clipboard.writeText(txt).then(()=>toast('Plano copiado!'));
+}
+
+function toast(msg){
+  const el=document.getElementById('toast');el.textContent=msg;
+  el.className='toast ok show';setTimeout(()=>el.classList.remove('show'),2500);
+}
+</script>
+</body>
+</html>

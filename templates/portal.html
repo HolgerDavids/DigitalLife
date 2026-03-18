@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Digital Life</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+
+:root{
+  --bg:#08090d;
+  --surface:#0f1117;
+  --border:#1e2130;
+  --text:#e8eaf0;
+  --muted:#4a5068;
+  --accent:#7c6cfc;
+  --green:#4ade80;
+  --yellow:#fbbf24;
+  --red:#f87171;
+}
+
+html,body{height:100%}
+body{overflow-x:hidden;overflow-y:auto}
+
+body{
+  background:var(--bg);
+  color:var(--text);
+  font-family:'DM Mono',monospace;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  position:relative;
+}
+
+/* ── Background mesh ── */
+.mesh{
+  position:fixed;inset:0;pointer-events:none;z-index:0;
+  background:
+    radial-gradient(ellipse 60% 50% at 20% 30%, rgba(124,108,252,.12) 0%, transparent 70%),
+    radial-gradient(ellipse 50% 60% at 80% 70%, rgba(74,222,128,.07) 0%, transparent 70%),
+    radial-gradient(ellipse 40% 40% at 50% 50%, rgba(251,191,36,.05) 0%, transparent 60%);
+}
+
+.grid-lines{
+  position:fixed;inset:0;pointer-events:none;z-index:0;
+  background-image:
+    linear-gradient(rgba(255,255,255,.02) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,.02) 1px, transparent 1px);
+  background-size:60px 60px;
+}
+
+/* ── Header ── */
+header{
+  position:fixed;top:0;left:0;right:0;
+  padding:20px 40px;
+  display:flex;align-items:center;justify-content:space-between;
+  z-index:10;
+  border-bottom:1px solid var(--border);
+  background:rgba(8,9,13,.8);
+  backdrop-filter:blur(20px);
+}
+
+.logo-text{
+  font-family:'Syne',sans-serif;
+  font-weight:800;font-size:22px;letter-spacing:-0.5px;
+}
+.logo-text span{color:var(--accent)}
+
+#user-badge{
+  display:none;align-items:center;gap:10px;
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:100px;padding:6px 16px;font-size:12px;
+}
+.status-dot{width:6px;height:6px;border-radius:50%;background:var(--green);
+  box-shadow:0 0 6px var(--green);animation:pulse 2s infinite;flex-shrink:0}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+#user-name{color:var(--text)}
+
+.btn-header{
+  background:none;border:1px solid var(--border);color:var(--muted);
+  font-family:'DM Mono',monospace;font-size:11px;padding:6px 14px;
+  border-radius:100px;cursor:pointer;transition:all .2s;
+}
+.btn-header:hover{border-color:var(--accent);color:var(--accent)}
+
+/* ── Main content ── */
+.content{
+  position:relative;z-index:1;
+  text-align:center;
+  padding:0 24px;
+  width:100%;max-width:800px;
+}
+
+.eyebrow{
+  font-size:11px;letter-spacing:3px;text-transform:uppercase;
+  color:var(--accent);margin-bottom:20px;opacity:.8;
+}
+
+h1{
+  font-family:'Syne',sans-serif;
+  font-size:clamp(48px,8vw,96px);
+  font-weight:800;line-height:.9;
+  letter-spacing:-3px;
+  margin-bottom:16px;
+}
+h1 .dim{color:var(--muted)}
+h1 .bright{color:var(--text)}
+
+.tagline{
+  font-size:14px;color:var(--muted);
+  margin-bottom:64px;line-height:1.6;
+  max-width:360px;margin-left:auto;margin-right:auto;
+}
+
+/* ── Cards ── */
+.cards{
+  display:flex;gap:20px;justify-content:center;flex-wrap:wrap;
+}
+
+.card{
+  position:relative;
+  width:260px;
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:24px;
+  padding:32px 28px;
+  text-decoration:none;
+  cursor:pointer;
+  transition:all .3s cubic-bezier(.34,1.56,.64,1);
+  overflow:hidden;
+  display:flex;flex-direction:column;align-items:flex-start;gap:16px;
+}
+.card::before{
+  content:'';position:absolute;inset:0;opacity:0;
+  transition:opacity .3s;
+  background:radial-gradient(circle at 50% 0%, var(--card-glow,.3) 0%, transparent 70%);
+}
+.card:hover{
+  transform:translateY(-8px) scale(1.01);
+  border-color:var(--card-border);
+  box-shadow:0 24px 60px var(--card-shadow);
+}
+.card:hover::before{opacity:1}
+
+.card-fin{--card-glow:rgba(74,222,128,.15);--card-border:#2a3d2e;--card-shadow:rgba(74,222,128,.12)}
+.card-vida{--card-glow:rgba(124,108,252,.15);--card-border:#2a2840;--card-shadow:rgba(124,108,252,.12)}
+.card-gym{--card-glow:rgba(251,113,36,.15);--card-border:#3d2a1a;--card-shadow:rgba(251,113,36,.12)}
+.card-agenda{--card-glow:rgba(94,175,255,.15);--card-border:#1a2a3d;--card-shadow:rgba(94,175,255,.12)}
+
+.card-icon{
+  width:52px;height:52px;border-radius:16px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:24px;position:relative;z-index:1;
+}
+.card-fin .card-icon{background:rgba(74,222,128,.12);border:1px solid rgba(74,222,128,.2)}
+.card-vida .card-icon{background:rgba(124,108,252,.12);border:1px solid rgba(124,108,252,.2)}
+.card-gym .card-icon{background:rgba(251,113,36,.12);border:1px solid rgba(251,113,36,.2)}
+.card-agenda .card-icon{background:rgba(94,175,255,.12);border:1px solid rgba(94,175,255,.2)}
+
+.card-label{font-size:10px;letter-spacing:2px;text-transform:uppercase;font-family:'DM Mono',monospace;position:relative;z-index:1}
+.card-fin .card-label{color:var(--green)}
+.card-vida .card-label{color:var(--accent)}
+.card-gym .card-label{color:#fb7124}
+.card-agenda .card-label{color:#5eafff}
+
+.card-title{font-family:'Syne',sans-serif;font-weight:700;font-size:22px;color:var(--text);position:relative;z-index:1}
+.card-desc{font-size:12px;color:var(--muted);line-height:1.6;position:relative;z-index:1}
+.card-arrow{margin-top:auto;padding-top:12px;font-size:18px;color:var(--muted);transition:transform .2s, color .2s;position:relative;z-index:1}
+.card:hover .card-arrow{transform:translateX(6px);color:var(--text)}
+
+/* ── Version tag ── */
+.version{position:fixed;bottom:24px;font-size:11px;color:var(--muted);letter-spacing:1px;opacity:.5;z-index:1}
+
+/* ── Floating orbs ── */
+.orb{position:fixed;border-radius:50%;pointer-events:none;animation:float 8s ease-in-out infinite;opacity:.4;filter:blur(1px)}
+.orb1{width:6px;height:6px;background:var(--accent);top:20%;left:15%;animation-delay:0s}
+.orb2{width:4px;height:4px;background:var(--green);top:60%;right:20%;animation-delay:2s}
+.orb3{width:5px;height:5px;background:var(--yellow);top:35%;right:10%;animation-delay:4s}
+.orb4{width:3px;height:3px;background:#f87171;bottom:25%;left:25%;animation-delay:1s}
+@keyframes float{0%,100%{transform:translateY(0) scale(1)}50%{transform:translateY(-20px) scale(1.3)}}
+
+/* ══════════════════════════════════════════
+   LOGIN OVERLAY
+══════════════════════════════════════════ */
+.login-overlay{
+  position:fixed;inset:0;z-index:500;
+  display:flex;align-items:center;justify-content:center;
+  padding:16px;
+  background:rgba(8,9,13,.92);
+  backdrop-filter:blur(12px);
+}
+.login-overlay.hidden{display:none}
+
+.login-box{
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:28px;
+  padding:40px;
+  width:min(420px,100%);
+  max-height:92vh;
+  overflow-y:auto;
+  position:relative;
+  box-shadow:0 32px 80px rgba(0,0,0,.6);
+}
+
+.login-glow{
+  position:absolute;top:-60px;left:50%;transform:translateX(-50%);
+  width:200px;height:120px;
+  background:radial-gradient(ellipse,rgba(124,108,252,.25) 0%,transparent 70%);
+  pointer-events:none;
+}
+
+.login-logo{
+  font-family:'Syne',sans-serif;font-weight:800;font-size:26px;
+  color:var(--accent);text-align:center;margin-bottom:4px;
+  letter-spacing:-0.5px;
+}
+.login-sub{
+  text-align:center;font-size:12px;color:var(--muted);
+  margin-bottom:28px;letter-spacing:.5px;
+}
+
+.login-tabs{
+  display:flex;gap:4px;background:rgba(255,255,255,.04);
+  border-radius:12px;padding:4px;margin-bottom:24px;
+  border:1px solid var(--border);
+}
+.login-tab{
+  flex:1;padding:8px;border:none;background:none;
+  color:var(--muted);font-family:'DM Mono',monospace;font-size:12px;
+  border-radius:9px;cursor:pointer;transition:all .2s;
+}
+.login-tab.active{background:var(--surface);color:var(--text);
+  box-shadow:0 1px 4px rgba(0,0,0,.3)}
+
+.login-field{margin-bottom:14px}
+.login-field label{
+  display:block;font-size:10px;color:var(--muted);
+  margin-bottom:6px;text-transform:uppercase;letter-spacing:1.5px;
+}
+.login-field input{
+  width:100%;background:rgba(255,255,255,.04);
+  border:1px solid var(--border);border-radius:10px;
+  color:var(--text);font-family:'DM Mono',monospace;font-size:13px;
+  padding:11px 14px;outline:none;transition:border-color .2s,background .2s;
+}
+.login-field input:focus{border-color:var(--accent);background:rgba(124,108,252,.05)}
+
+.btn-login{
+  width:100%;padding:12px;border-radius:10px;border:none;
+  background:var(--accent);color:#fff;
+  font-family:'DM Mono',monospace;font-size:13px;font-weight:500;
+  cursor:pointer;transition:all .2s;margin-top:6px;
+  letter-spacing:.3px;
+}
+.btn-login:hover{background:#9d8ffd;transform:translateY(-1px);box-shadow:0 8px 20px rgba(124,108,252,.3)}
+.btn-login:active{transform:translateY(0)}
+
+.login-link{
+  text-align:center;font-size:12px;color:var(--muted);
+  margin-top:14px;cursor:pointer;line-height:1.5;
+}
+.login-link span{color:var(--accent);cursor:pointer}
+.login-link span:hover{text-decoration:underline}
+
+.login-msg{
+  display:none;margin-top:14px;padding:12px 14px;border-radius:10px;
+  font-size:12px;line-height:1.6;
+}
+.login-msg.ok{background:rgba(74,222,128,.1);border:1px solid rgba(74,222,128,.2);color:var(--green)}
+.login-msg.err{background:rgba(248,113,113,.1);border:1px solid rgba(248,113,113,.2);color:var(--red)}
+
+/* ── Toast ── */
+.toast{
+  position:fixed;bottom:24px;right:24px;
+  background:var(--surface);border:1px solid var(--border);
+  color:var(--text);padding:11px 18px;border-radius:12px;
+  font-size:12px;z-index:600;
+  transform:translateY(80px);opacity:0;transition:all .3s;pointer-events:none;
+  font-family:'DM Mono',monospace;
+}
+.toast.show{transform:translateY(0);opacity:1}
+.toast.ok{border-color:var(--green);color:var(--green)}
+.toast.err{border-color:var(--red);color:var(--red)}
+
+/* ── MOBILE ── */
+@media(max-width:640px){
+  html,body{height:auto;min-height:100%}
+  body{justify-content:flex-start;padding-top:72px;padding-bottom:32px}
+  header{padding:12px 16px}
+  .logo-text{font-size:18px}
+  .content{padding:0 16px}
+  h1{font-size:clamp(36px,12vw,64px);letter-spacing:-2px;margin-bottom:12px}
+  .tagline{font-size:13px;margin-bottom:36px}
+  .eyebrow{font-size:10px;margin-bottom:14px}
+  .cards{flex-direction:column;align-items:stretch;gap:12px}
+  .card{width:100%;padding:20px 18px;gap:12px;border-radius:18px}
+  .card:hover{transform:none}
+  .card-title{font-size:18px}
+  .version{display:none}
+  .orb{display:none}
+  .login-box{padding:28px 20px;border-radius:20px}
+}
+@media(max-width:380px){
+  h1{font-size:32px}
+  .card{padding:16px 14px}
+}
+</style>
+</head>
+<body>
+
+<div class="mesh"></div>
+<div class="grid-lines"></div>
+<div class="orb orb1"></div>
+<div class="orb orb2"></div>
+<div class="orb orb3"></div>
+<div class="orb orb4"></div>
+
+<!-- ══ OVERLAY DE LOGIN ════════════════════════════════ -->
+<div class="login-overlay" id="login-overlay">
+  <div class="login-box">
+    <div class="login-glow"></div>
+    <div class="login-logo">Digital<span style="color:var(--green)">Life</span></div>
+    <div class="login-sub">Sistema de vida digital</div>
+
+    <div class="login-tabs">
+      <button class="login-tab active" id="tab-login-btn" onclick="setTab('login')">Entrar</button>
+      <button class="login-tab" id="tab-reg-btn" onclick="setTab('registro')">Criar conta</button>
+    </div>
+
+    <!-- Login -->
+    <div id="form-login">
+      <div class="login-field"><label>E-mail</label>
+        <input type="email" id="l-email" placeholder="seu@email.com"
+          onkeydown="if(event.key==='Enter')fazerLogin()">
+      </div>
+      <div class="login-field"><label>Senha</label>
+        <input type="password" id="l-senha" placeholder="••••••••"
+          onkeydown="if(event.key==='Enter')fazerLogin()">
+      </div>
+      <button class="btn-login" onclick="fazerLogin()">Entrar</button>
+      <div class="login-link" onclick="setTab('reset')">
+        Esqueceu sua senha? <span>Recuperar acesso</span>
+      </div>
+    </div>
+
+    <!-- Registro -->
+    <div id="form-registro" style="display:none">
+      <div class="login-field"><label>Nome</label>
+        <input type="text" id="r-nome" placeholder="Seu nome completo">
+      </div>
+      <div class="login-field"><label>E-mail</label>
+        <input type="email" id="r-email" placeholder="seu@email.com">
+      </div>
+      <div class="login-field"><label>Senha</label>
+        <input type="password" id="r-senha" placeholder="Mínimo 6 caracteres">
+      </div>
+      <button class="btn-login" onclick="fazerRegistro()">Criar conta</button>
+    </div>
+
+    <!-- Recuperar senha -->
+    <div id="form-reset" style="display:none">
+      <div style="font-size:12px;color:var(--muted);margin-bottom:16px;line-height:1.7">
+        Informe seu e-mail e enviaremos um link para redefinir sua senha.
+      </div>
+      <div class="login-field"><label>E-mail</label>
+        <input type="email" id="reset-email" placeholder="seu@email.com">
+      </div>
+      <button class="btn-login" onclick="solicitarReset()">Enviar link de recuperação</button>
+      <div id="reset-msg" class="login-msg"></div>
+      <div class="login-link" onclick="setTab('login')">← Voltar ao login</div>
+    </div>
+
+    <!-- Redefinir senha (via token) -->
+    <div id="form-redef" style="display:none">
+      <div style="font-size:12px;color:var(--muted);margin-bottom:16px">
+        Crie uma nova senha para sua conta.
+      </div>
+      <div class="login-field"><label>Nova senha</label>
+        <input type="password" id="redef-s1" placeholder="Mínimo 6 caracteres">
+      </div>
+      <div class="login-field"><label>Confirmar senha</label>
+        <input type="password" id="redef-s2" placeholder="Repita a senha">
+      </div>
+      <button class="btn-login" onclick="redefinirSenha()">Salvar nova senha</button>
+    </div>
+
+  </div>
+</div>
+<!-- ════════════════════════════════════════════════════ -->
+
+<header>
+  <div class="logo-text">Digital<span>Life</span></div>
+  <div id="user-badge">
+    <div class="status-dot"></div>
+    <span id="user-name"></span>
+    <button class="btn-header" onclick="fazerLogout()">Sair</button>
+  </div>
+</header>
+
+<div class="content">
+  <div class="eyebrow">Sistema de vida digital</div>
+  <h1>
+    <span class="dim">Seu</span><br>
+    <span class="bright">Universo</span><br>
+    <span class="dim">Digital</span>
+  </h1>
+  <p class="tagline">Controle financeiro, gamificação de hábitos e treinamento físico.</p>
+
+  <div class="cards">
+
+    <a class="card card-fin" href="/financeiro">
+      <div class="card-icon">💰</div>
+      <div>
+        <div class="card-label">Módulo 01</div>
+        <div class="card-title">Financeiro</div>
+      </div>
+      <div class="card-desc">
+        Controle receitas, despesas, importe extratos bancários e visualize relatórios.
+      </div>
+      <div class="card-arrow">→</div>
+    </a>
+
+    <a class="card card-vida" href="/vida">
+      <div class="card-icon">🎮</div>
+      <div>
+        <div class="card-label">Módulo 02</div>
+        <div class="card-title">Vida</div>
+      </div>
+      <div class="card-desc">
+        Gamifique seus hábitos, ganhe XP, evolua de nível e visualize seu progresso.
+      </div>
+      <div class="card-arrow">→</div>
+    </a>
+
+    <a class="card card-gym" href="/gym">
+      <div class="card-icon">🏋️</div>
+      <div>
+        <div class="card-label">Módulo 03</div>
+        <div class="card-title">GYM</div>
+      </div>
+      <div class="card-desc">
+        Planos de treino para iniciante, intermediário e avançado com guia completo.
+      </div>
+      <div class="card-arrow">→</div>
+    </a>
+
+    <a class="card card-agenda" href="/agenda">
+      <div class="card-icon">✅</div>
+      <div>
+        <div class="card-label">Módulo 04</div>
+        <div class="card-title">Agenda</div>
+      </div>
+      <div class="card-desc">
+        TO-DO com controle de tempo, timer Pomodoro, prioridades e visão semanal.
+      </div>
+      <div class="card-arrow">→</div>
+    </a>
+
+  </div>
+</div>
+
+<div class="version">Digital Life v2.0</div>
+<div class="toast" id="toast"></div>
+
+<script>
+// ── Helpers ──────────────────────────────────────────────────────────
+function toast(msg, type='ok') {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = `toast ${type} show`;
+  clearTimeout(el._t);
+  el._t = setTimeout(() => el.classList.remove('show'), 3200);
+}
+
+async function api(url, opts={}) {
+  const res = await fetch(url, {
+    method: opts.method || 'GET',
+    headers: {'Content-Type':'application/json'},
+    body: opts.body ? JSON.stringify(opts.body) : undefined,
+  });
+  return res.json();
+}
+
+// ── Abas do login ─────────────────────────────────────────────────────
+function setTab(tab) {
+  ['login','registro','reset','redef'].forEach(t => {
+    document.getElementById(`form-${t}`).style.display = t === tab ? '' : 'none';
+  });
+  document.getElementById('tab-login-btn')?.classList.toggle('active', tab === 'login');
+  document.getElementById('tab-reg-btn')?.classList.toggle('active', tab === 'registro');
+}
+
+// ── Login ─────────────────────────────────────────────────────────────
+async function fazerLogin() {
+  const email = document.getElementById('l-email').value.trim();
+  const senha = document.getElementById('l-senha').value;
+  if (!email || !senha) { toast('Preencha e-mail e senha.', 'err'); return; }
+  const r = await api('/api/auth/login', {method:'POST', body:{email,senha}});
+  if (!r.ok) { toast(r.erro, 'err'); return; }
+  entrarNoApp(r.data.nome);
+}
+
+// ── Registro ──────────────────────────────────────────────────────────
+async function fazerRegistro() {
+  const nome  = document.getElementById('r-nome').value.trim();
+  const email = document.getElementById('r-email').value.trim();
+  const senha = document.getElementById('r-senha').value;
+  if (!nome || !email || !senha) { toast('Preencha todos os campos.', 'err'); return; }
+  const r = await api('/api/auth/registrar', {method:'POST', body:{nome,email,senha}});
+  if (!r.ok) { toast(r.erro, 'err'); return; }
+  entrarNoApp(r.data.nome);
+}
+
+// ── Logout ────────────────────────────────────────────────────────────
+async function fazerLogout() {
+  await api('/api/auth/logout', {method:'POST'});
+  document.getElementById('user-badge').style.display = 'none';
+  document.getElementById('l-senha').value = '';
+  setTab('login');
+  document.getElementById('login-overlay').classList.remove('hidden');
+  toast('Sessão encerrada.');
+}
+
+// ── Pós-login: esconde overlay, mostra badge ──────────────────────────
+function entrarNoApp(nome) {
+  document.getElementById('login-overlay').classList.add('hidden');
+  const badge = document.getElementById('user-badge');
+  document.getElementById('user-name').textContent = nome;
+  badge.style.display = 'flex';
+  toast(`Bem-vindo, ${nome}!`);
+}
+
+// ── Recuperação de senha ──────────────────────────────────────────────
+async function solicitarReset() {
+  const email = document.getElementById('reset-email').value.trim();
+  if (!email) { toast('Informe seu e-mail.', 'err'); return; }
+  const r = await api('/api/auth/solicitar-reset', {method:'POST', body:{email}});
+  if (!r.ok) { toast(r.erro, 'err'); return; }
+  const msg = document.getElementById('reset-msg');
+  msg.style.display = 'block';
+  if (r.data.token_debug) {
+    msg.className = 'login-msg ok';
+    msg.innerHTML = `E-mail SMTP não configurado. Use este link para redefinir:<br>
+      <a href="/redefinir-senha?token=${r.data.token_debug}"
+         style="color:var(--accent);word-break:break-all"
+         onclick="usarToken('${r.data.token_debug}');return false">
+        Clique aqui para redefinir
+      </a>`;
+  } else {
+    msg.className = 'login-msg ok';
+    msg.textContent = '✓ Link enviado! Verifique sua caixa de entrada.';
+  }
+}
+
+function usarToken(token) {
+  window._resetToken = token;
+  setTab('redef');
+}
+
+async function redefinirSenha() {
+  const s1 = document.getElementById('redef-s1').value;
+  const s2 = document.getElementById('redef-s2').value;
+  if (!s1 || s1.length < 6) { toast('Mínimo 6 caracteres.', 'err'); return; }
+  if (s1 !== s2) { toast('As senhas não coincidem.', 'err'); return; }
+  const token = window._resetToken || new URLSearchParams(window.location.search).get('token') || '';
+  if (!token) { toast('Token inválido.', 'err'); return; }
+  const r = await api('/api/auth/redefinir-senha', {method:'POST', body:{token,senha:s1}});
+  if (!r.ok) { toast(r.erro, 'err'); return; }
+  history.replaceState({}, '', '/');
+  entrarNoApp(r.data.nome);
+  toast('Senha redefinida com sucesso!');
+}
+
+// ── Init ──────────────────────────────────────────────────────────────
+(async function init() {
+  // Verifica se há token de reset na URL
+  const token = new URLSearchParams(window.location.search).get('token');
+  if (token) {
+    window._resetToken = token;
+    setTab('redef');
+    return; // mostra o overlay com form de redefinição
+  }
+
+  // Verifica sessão ativa
+  const r = await api('/api/auth/status');
+  if (r.ok && r.data.logado) {
+    entrarNoApp(r.data.usuario.nome);
+  }
+  // Caso contrário: overlay já visível por padrão
+})();
+</script>
+</body>
+</html>
