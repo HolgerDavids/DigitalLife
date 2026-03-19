@@ -1,0 +1,9 @@
+__pycache__/
+*.py[cod]
+
+config.json
+finance.db
+*.db-shm
+*.db-wal
+
+financecontrol/

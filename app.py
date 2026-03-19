@@ -613,6 +613,14 @@ def gym():
 def agenda():
     return render_template("agenda.html")
 
+@app.route("/casal")
+def casal():
+    return render_template("casal.html")
+
+@app.route("/estudos")
+def estudos():
+    return render_template("estudos.html")
+
 @app.route("/")
 @app.route("/redefinir-senha")
 def index():
