@@ -25,8 +25,10 @@ from flask        import Flask, request, jsonify, render_template, g, session
 
 # ─── CONFIGURAÇÃO ─────────────────────────────────────────────────────────────
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-DB_PATH  = os.path.join(BASE_DIR, "finance.db")
-CFG_PATH = os.path.join(BASE_DIR, "config.json")
+DATA_DIR = os.environ.get("FC_DATA_DIR", BASE_DIR)
+os.makedirs(DATA_DIR, exist_ok=True)
+DB_PATH  = os.path.join(DATA_DIR, "finance.db")
+CFG_PATH = os.path.join(DATA_DIR, "config.json")
 PORT     = 5000
 
 def _load_cfg() -> dict:
@@ -2742,6 +2744,7 @@ _EM_SERVIDOR = (
     or os.environ.get("RENDER")             # Render
     or os.environ.get("RAILWAY_ENVIRONMENT")# Railway
     or os.environ.get("FLY_APP_NAME")       # Fly.io
+    or os.environ.get("HIDENCLOUD")         # HidenCloud / custom
     or os.environ.get("FC_WEB_MODE")        # manual: export FC_WEB_MODE=1
 )
 
