@@ -27,11 +27,13 @@ from werkzeug.utils import secure_filename
 # ─── CONFIGURAÇÃO ─────────────────────────────────────────────────────────────
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DB_PATH  = os.path.join(BASE_DIR, "finance.db")
-CFG_PATH = os.path.join(BASE_DIR, "config.json")
+INSTANCE_DIR = os.path.join(BASE_DIR, "instance")
+CFG_PATH = os.environ.get("FC_CONFIG_PATH") or os.path.join(INSTANCE_DIR, "config.json")
 UPLOAD_DIR = os.path.join(BASE_DIR, "comprovantes")
 PORT     = 5000
 
 # Criar pasta de comprovantes se não existir
+os.makedirs(INSTANCE_DIR, exist_ok=True)
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 # Extensões e tamanho máximo permitido
@@ -49,6 +51,9 @@ def _save_cfg(cfg: dict):
 
 def _get_secret_key() -> str:
     """Persiste a SECRET_KEY entre restarts para não invalidar sessões."""
+    env_secret = os.environ.get("FLASK_SECRET_KEY") or os.environ.get("SECRET_KEY")
+    if env_secret:
+        return env_secret
     cfg = _load_cfg()
     if not cfg.get("secret_key"):
         cfg["secret_key"] = secrets.token_hex(32)
