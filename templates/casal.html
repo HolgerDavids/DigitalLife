@@ -156,6 +156,15 @@ tr:hover td{background:rgba(255,255,255,.02)}
 .modal p{font-size:13px;color:var(--muted);margin-bottom:20px}
 .modal-footer{display:flex;justify-content:flex-end;gap:10px;margin-top:20px}
 
+/* ── MODAL COMPROVANTE ── */
+.modal-comprovante{width:auto;padding:0;overflow:hidden}
+.modal-img-container{position:relative;width:100%;max-height:70vh;background:var(--bg)}
+.modal-img-container img{width:100%;height:auto;display:block;max-height:70vh;object-fit:contain}
+.modal-img-close{position:absolute;top:10px;right:10px;background:rgba(14,15,19,.8);border:none;color:var(--text);
+  width:40px;height:40px;border-radius:50%;cursor:pointer;font-size:20px;display:flex;align-items:center;justify-content:center;
+  transition:all .2s;z-index:1}
+.modal-img-close:hover{background:rgba(14,15,19,1)}
+
 /* ── TOAST ── */
 .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(20px);
   background:var(--surface2);border:1px solid var(--border);border-radius:10px;
@@ -298,6 +307,26 @@ tr:hover td{background:rgba(255,255,255,.02)}
         <label>&nbsp;</label>
         <button class="btn btn-primary" onclick="adicionarGasto()" style="width:100%;white-space:nowrap">+ Adicionar</button>
       </div>
+    </div>
+    
+    <!-- Seção de comprovante -->
+    <div style="margin-top:20px;padding-top:20px;border-top:1px solid var(--border)">
+      <h3 style="font-family:'Fraunces',serif;font-size:14px;margin-bottom:12px">📸 Comprovante da despesa</h3>
+      <div style="display:flex;gap:12px;align-items:flex-start;flex-wrap:wrap">
+        <div>
+          <input type="file" id="n-comprovante" accept="image/*" style="display:none">
+          <button type="button" class="btn btn-secondary" onclick="document.getElementById('n-comprovante').click()">
+            🖼️ Selecionar imagem
+          </button>
+          <div style="font-size:11px;color:var(--muted);margin-top:6px">PNG, JPG, GIF ou WebP (máx 5MB)</div>
+        </div>
+        <div id="preview-comprovante" style="display:none;position:relative">
+          <img id="img-preview" src="" style="height:80px;border-radius:8px;border:1px solid var(--border)" alt="Preview">
+          <button type="button" class="btn btn-danger btn-sm" onclick="limparComprovante()" style="position:absolute;top:-8px;right:-8px;padding:4px 8px;font-size:10px">✕</button>
+        </div>
+      </div>
+    </div>
+  </div>
     </div>
   </div>
 
@@ -446,6 +475,16 @@ tr:hover td{background:rgba(255,255,255,.02)}
     <div class="modal-footer">
       <button class="btn btn-secondary" onclick="closeModal()">Cancelar</button>
       <button class="btn btn-danger" id="btn-del-ok">Excluir</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal visualizar comprovante -->
+<div class="modal-overlay" id="modal-comprovante" onclick="if(event.target===this)closeComprovante()">
+  <div class="modal modal-comprovante">
+    <div class="modal-img-container">
+      <img id="modal-img-src" src="" alt="Comprovante">
+      <button class="modal-img-close" onclick="closeComprovante()">✕</button>
     </div>
   </div>
 </div>
@@ -673,12 +712,13 @@ function renderLancamentos() {
       <th>Categoria</th>
       <th>Pago por</th>
       <th style="text-align:right">Valor</th>
-      <th style="width:80px"></th>
+      <th style="width:100px"></th>
     </tr></thead>
     <tbody>${lista.map(g => {
       const isP1  = g.pago === 'p1';
       const nome  = isP1 ? p1 : p2;
       const cls   = isP1 ? 'badge-p1' : 'badge-p2';
+      const temComprovante = g.comprovante_id;
       return `<tr>
         <td style="text-align:center;font-size:18px">${g.cat.split(' ')[0]}</td>
         <td style="color:var(--muted)">${fmtData(g.data)}</td>
@@ -686,7 +726,10 @@ function renderLancamentos() {
         <td><span class="badge" style="background:var(--surface2);color:var(--muted)">${g.cat.slice(g.cat.indexOf(' ')+1)}</span></td>
         <td><span class="badge ${cls}">${nome}</span></td>
         <td style="text-align:right;font-weight:500;color:${isP1?'var(--p1)':'var(--p2)'}">${fmt(g.valor)}</td>
-        <td><button class="btn btn-danger btn-sm" onclick="confirmarExcluir('${g.id}')">Excluir</button></td>
+        <td style="display:flex;gap:4px;justify-content:flex-end">
+          ${temComprovante ? `<button class="btn btn-secondary btn-sm" onclick="abrirComprovante('${g.comprovante_id}')" title="Ver comprovante">📸</button>` : ''}
+          <button class="btn btn-danger btn-sm" onclick="confirmarExcluir('${g.id}')">✕</button>
+        </td>
       </tr>`;
     }).join('')}</tbody>
   </table>`;
@@ -775,7 +818,7 @@ function renderRelatorio() {
   }
   rtab.innerHTML = `<table>
     <thead><tr>
-      <th></th><th>Data</th><th>Descrição</th><th>Categoria</th><th>Pago por</th><th style="text-align:right">Valor</th>
+      <th></th><th>Data</th><th>Descrição</th><th>Categoria</th><th>Pago por</th><th style="text-align:right">Valor</th><th style="width:60px"></th>
     </tr></thead>
     <tbody>${sortedLista.map(g => {
       const isP1 = g.pago==='p1';
@@ -786,9 +829,11 @@ function renderRelatorio() {
         <td><span class="badge" style="background:var(--surface2);color:var(--muted)">${g.cat.slice(g.cat.indexOf(' ')+1)}</span></td>
         <td><span class="badge ${isP1?'badge-p1':'badge-p2'}">${isP1?p1:p2}</span></td>
         <td style="text-align:right;color:${isP1?'var(--p1)':'var(--p2)'}">${fmt(g.valor)}</td>
+        <td style="text-align:center">${g.comprovante_id ? `<button class="btn btn-secondary btn-sm" onclick="abrirComprovante('${g.comprovante_id}')" title="Ver comprovante" style="padding:4px 8px;font-size:11px">📸</button>` : ''}</td>
       </tr>`;
     }).join('')}</tbody>
   </table>`;
+}
 }
 
 function renderCatsPessoa(pago, lista, totalPessoa, elId) {
@@ -828,16 +873,94 @@ function adicionarGasto() {
   if (!desc)          { toast('Preencha a descrição.', 'err'); return; }
   if (!valor||valor<=0){ toast('Informe um valor válido.', 'err'); return; }
 
-  const gasto = { id: gerarId(), desc, valor, cat, pago, data };
+  const gasto = { id: gerarId(), desc, valor, cat, pago, data, comprovante_id: null };
+  
+  // Se houver arquivo selecionado, fazer upload
+  const fileInput = document.getElementById('n-comprovante');
+  if (fileInput.files.length > 0) {
+    const formData = new FormData();
+    formData.append('file', fileInput.files[0]);
+    
+    fetch('/api/casal/comprovante', {
+      method: 'POST',
+      body: formData
+    })
+    .then(r => r.json())
+    .then(data => {
+      if (data.err) {
+        toast('Erro ao enviar comprovante: ' + data.err, 'err');
+      } else {
+        gasto.comprovante_id = data.id;
+      }
+      finalizarAdicao(gasto);
+    })
+    .catch(e => {
+      toast('Erro na conexão: ' + e.message, 'err');
+      finalizarAdicao(gasto);
+    });
+  } else {
+    finalizarAdicao(gasto);
+  }
+}
+
+function finalizarAdicao(gasto) {
   GASTOS.unshift(gasto);
   salvar();
 
   document.getElementById('n-desc').value  = '';
   document.getElementById('n-valor').value = '';
+  document.getElementById('n-comprovante').value = '';
+  limparComprovante();
 
   populateMeses();
   atualizarTudo();
   toast('Lançamento adicionado! 💸');
+}
+
+// ══════════════════════════════════════════════════════════════════
+//  GERENCIAR COMPROVANTE
+// ══════════════════════════════════════════════════════════════════
+document.getElementById('n-comprovante')?.addEventListener('change', function(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  
+  // Validar tamanho (5MB)
+  if (file.size > 5 * 1024 * 1024) {
+    toast('Arquivo muito grande (máx 5MB)', 'err');
+    e.target.value = '';
+    return;
+  }
+  
+  // Validar tipo
+  if (!['image/png', 'image/jpeg', 'image/gif', 'image/webp'].includes(file.type)) {
+    toast('Formato não suportado. Use PNG, JPG, GIF ou WebP.', 'err');
+    e.target.value = '';
+    return;
+  }
+  
+  // Mostrar preview
+  const reader = new FileReader();
+  reader.onload = (evt) => {
+    document.getElementById('img-preview').src = evt.target.result;
+    document.getElementById('preview-comprovante').style.display = 'block';
+  };
+  reader.readAsDataURL(file);
+});
+
+function limparComprovante() {
+  document.getElementById('n-comprovante').value = '';
+  document.getElementById('preview-comprovante').style.display = 'none';
+  document.getElementById('img-preview').src = '';
+}
+
+function abrirComprovante(comprovante_id) {
+  if (!comprovante_id) return;
+  document.getElementById('modal-img-src').src = `/api/casal/comprovante/${comprovante_id}`;
+  document.getElementById('modal-comprovante').classList.add('open');
+}
+
+function closeComprovante() {
+  document.getElementById('modal-comprovante').classList.remove('open');
 }
 
 let _delId = null;

@@ -21,13 +21,22 @@ from email.mime.multipart import MIMEMultipart
 from datetime     import datetime, date, timedelta
 from contextlib   import contextmanager
 from functools    import wraps
-from flask        import Flask, request, jsonify, render_template, g, session
+from flask        import Flask, request, jsonify, render_template, g, session, send_file
+from werkzeug.utils import secure_filename
 
 # ─── CONFIGURAÇÃO ─────────────────────────────────────────────────────────────
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DB_PATH  = os.path.join(BASE_DIR, "finance.db")
 CFG_PATH = os.path.join(BASE_DIR, "config.json")
+UPLOAD_DIR = os.path.join(BASE_DIR, "comprovantes")
 PORT     = 5000
+
+# Criar pasta de comprovantes se não existir
+os.makedirs(UPLOAD_DIR, exist_ok=True)
+
+# Extensões e tamanho máximo permitido
+ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
+MAX_FILE_SIZE = 5 * 1024 * 1024  # 5MB
 
 def _load_cfg() -> dict:
     try:
@@ -45,6 +54,37 @@ def _get_secret_key() -> str:
         cfg["secret_key"] = secrets.token_hex(32)
         _save_cfg(cfg)
     return cfg["secret_key"]
+
+def _allowed_file(filename: str) -> bool:
+    """Valida extensão do arquivo."""
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+def _save_upload_file(file) -> str | None:
+    """Salva arquivo de upload e retorna o ID único gerado."""
+    if not file or file.filename == '':
+        return None
+    if not _allowed_file(file.filename):
+        return None
+    
+    # Verificar tamanho
+    file.seek(0, 2)  # ir para o final
+    file_size = file.tell()
+    file.seek(0)  # voltar para o início
+    
+    if file_size > MAX_FILE_SIZE:
+        return None
+    
+    # Gerar nome único
+    file_id = uuid.uuid4().hex
+    ext = file.filename.rsplit('.', 1)[1].lower()
+    filename = secure_filename(f"{file_id}.{ext}")
+    filepath = os.path.join(UPLOAD_DIR, filename)
+    
+    try:
+        file.save(filepath)
+        return file_id
+    except Exception:
+        return None
 
 app = Flask(__name__)
 app.config["JSON_SORT_KEYS"]          = False
@@ -616,6 +656,31 @@ def agenda():
 @app.route("/casal")
 def casal():
     return render_template("casal.html")
+
+@app.route("/api/casal/comprovante", methods=["POST"])
+def upload_comprovante():
+    """Upload de comprovante de despesa do casal."""
+    if 'file' not in request.files:
+        return jsonify({"err": "Nenhum arquivo enviado"}), 400
+    
+    file = request.files['file']
+    file_id = _save_upload_file(file)
+    
+    if not file_id:
+        return jsonify({"err": "Arquivo inválido ou muito grande (máx 5MB)"}), 400
+    
+    return jsonify({"id": file_id, "url": f"/api/casal/comprovante/{file_id}"})
+
+@app.route("/api/casal/comprovante/<file_id>")
+def get_comprovante(file_id: str):
+    """Serve imagem de comprovante."""
+    # Procurar arquivo com qualquer extensão
+    for ext in ALLOWED_EXTENSIONS:
+        filepath = os.path.join(UPLOAD_DIR, f"{file_id}.{ext}")
+        if os.path.exists(filepath):
+            return send_file(filepath, mimetype=f"image/{ext}")
+    
+    return jsonify({"err": "Arquivo não encontrado"}), 404
 
 @app.route("/estudos")
 def estudos():
